@@ -136,7 +136,7 @@ if __name__ == "__main__":
         ZNormalization(masking_method=ZNormalization.mean),
         RandomNoise(),
         ToCanonical(),
-        Resample(128),  # do not know what it do
+        CropOrPad((256, 256, 256)),  # do not know what it do
         RandomFlip(axes=(0,)),
         OneOf({
             RandomAffine(): 0.8,

@@ -11,9 +11,9 @@ module load python/3.6
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 echo "$(date +"%T"):  Activated python virtualenv"
-pip install --no-index torch nibabel  && echo "$(date +"%T"):  Installed nibabel, torch"
-pip install --no-index torchio && echo "$(date +"%T"):  Installed torchio from local wheel!"
-pip install --no-index scikit-image && echo "$(date +"%T"):  Installed torchio from local wheel!"
+pip3 install --no-index torch nibabel  && echo "$(date +"%T"):  Installed nibabel, torch"
+pip3 install --no-index torchio && echo "$(date +"%T"):  Installed torchio from local wheel!"
+pip3 install --no-index scikit-image && echo "$(date +"%T"):  Installed torchio from local wheel!"
 
 echo -e '\n\n\n'
 cd $SLURM_TMPDIR
@@ -29,5 +29,5 @@ cd work
 # run script
 echo -e '\n\n\n'
 echo "$(date +"%T"):  Executing torch_test.py"
-python /home/jueqi/projects/def-jlevman/jueqi/pytorch_Unet/train.py \
+python3 /home/jueqi/projects/def-jlevman/jueqi/pytorch_Unet/train.py \
        --data_dir="$SLURM_TMPDIR" && echo "$(date +"%T"):  Successfully executed train.py"
