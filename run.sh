@@ -7,8 +7,14 @@
 #SBATCH --mail-user=x2019cwn@stfx.ca # used to send email
 #SBATCH --mail-type=ALL
 
-module load cuda cudnn
-source /home/jueqi/tensorflow/bin/activate
+module load python/3.6
+virtualenv --no-download $SLURM_TMPDIR/env
+source $SLURM_TMPDIR/env/bin/activate
+echo "$(date +"%T"):  Activated python virtualenv"
+pip install --no-index torch nibabel  && echo "$(date +"%T"):  Installed nibabel, torch"
+pip install --no-index torchio && echo "$(date +"%T"):  Installed torchio from local wheel!"
+pip install --no-index scikit-image && echo "$(date +"%T"):  Installed torchio from local wheel!"
+
 
 cd $SLURM_TMPDIR
 mkdir work
