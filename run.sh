@@ -21,7 +21,6 @@ tree
 ## The computations are done, so clean up the data set...
 #tar -cf ~/projects/def-foo/johndoe/results.tar work
 
-
 # run script
 echo "$(date +"%T"):  Executing torch_test.py"
 python /home/jueqi/projects/def-jlevman/jueqi/pytorch_Unet/train.py \
