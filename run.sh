@@ -23,8 +23,6 @@ echo "$(date +"%T"):  Copying data"
 tar -xf /home/jueqi/projects/def-jlevman/jueqi/my_data.tar -C work && echo "$(date +"%T"):  Copied data"
 # Now do my computations here on the local disk using the contents of the extracted archive...
 cd work
-echo "print cur path:" && pwd
-tree
 ## The computations are done, so clean up the data set...
 #tar -cf ~/projects/def-foo/johndoe/results.tar work
 

@@ -18,6 +18,7 @@ from torchio.transforms import (
     OneOf,
     Compose,
 )
+
 import torchio
 import numpy as np
 from utils.unet import UNet, UNet3D
@@ -135,7 +136,7 @@ if __name__ == "__main__":
         ZNormalization(masking_method=ZNormalization.mean),
         RandomNoise(),
         ToCanonical(),
-        Resample(128    ),  # do not know what it do
+        Resample(128),  # do not know what it do
         RandomFlip(axes=(0,)),
         OneOf({
             RandomAffine(): 0.8,
@@ -147,7 +148,7 @@ if __name__ == "__main__":
         # HistogramStandardization(landmarks_dict={MRI: landmarks}),
         ZNormalization(masking_method=ZNormalization.mean),
         ToCanonical(),
-        Resize(128),
+        Resample(128)
         # Resample((4, 4, 4)),
     ])
 
