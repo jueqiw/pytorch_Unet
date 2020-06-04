@@ -7,9 +7,6 @@
 #SBATCH --mail-user=x2019cwn@stfx.ca # used to send email
 #SBATCH --mail-type=ALL
 
-
-
-cd $SLURM_SUBMIT_DIR
 module load cuda cudnn
 source /home/jueqi/tensorflow/bin/activate
 
