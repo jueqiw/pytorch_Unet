@@ -11,6 +11,7 @@ module load cuda cudnn
 source /home/jueqi/tensorflow/bin/activate
 
 cd $SLURM_TMPDIR
+pwd
 mkdir work
 cd work
 # --strip-components prevents making double parent directory
