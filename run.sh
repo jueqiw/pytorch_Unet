@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --gres=gpu:t4:1  # request GPU "generic resource"
 #SBATCH --cpus-per-task=8   # maximum CPU cores per GPU request: 6 on Cedar, 16 on Graham.
-#SBATCH --mem=125G   # memory
+#SBATCH --mem=150G   # memory
 #SBATCH --output=out-path.out  # %N for node name, %j for jobID
 #SBATCH --time=00-03:00      # time (DD-HH:MM)
 #SBATCH --mail-user=x2019cwn@stfx.ca # used to send email
@@ -15,7 +15,7 @@ pip install --no-index torch nibabel  && echo "$(date +"%T"):  Installed nibabel
 pip install --no-index torchio && echo "$(date +"%T"):  Installed torchio from local wheel!"
 pip install --no-index scikit-image && echo "$(date +"%T"):  Installed torchio from local wheel!"
 
-for ((i=0; i<$(tput cols); i++)); do echo -e "=\c" ;done
+echo -e '\n\n\n'
 cd $SLURM_TMPDIR
 mkdir work
 # --strip-components prevents making double parent directory
@@ -29,7 +29,7 @@ tree
 #tar -cf ~/projects/def-foo/johndoe/results.tar work
 
 # run script
-for ((i=0; i<$(tput cols); i++)); do echo -e "=\c" ;done
+echo -e '\n\n\n'
 echo "$(date +"%T"):  Executing torch_test.py"
 python /home/jueqi/projects/def-jlevman/jueqi/pytorch_Unet/train.py \
        --data_dir="$SLURM_TMPDIR" && echo "$(date +"%T"):  Successfully executed train.py"
