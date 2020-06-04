@@ -16,6 +16,7 @@ from torchio.transforms import (
     CropOrPad,
     HistogramStandardization,
     OneOf,
+    Pad,
     Compose,
 )
 
@@ -136,7 +137,7 @@ if __name__ == "__main__":
         ZNormalization(masking_method=ZNormalization.mean),
         RandomNoise(),
         ToCanonical(),
-        CropOrPad((256, 256, 256)),  # do not know what it do
+        Pad((256, 256, 256)),  # do not know what it do
         RandomFlip(axes=(0,)),
         OneOf({
             RandomAffine(): 0.8,
@@ -148,7 +149,7 @@ if __name__ == "__main__":
         # HistogramStandardization(landmarks_dict={MRI: landmarks}),
         ZNormalization(masking_method=ZNormalization.mean),
         ToCanonical(),
-        CropOrPad((256, 256, 256)),
+        Pad((256, 256, 256)),
         # Resample((4, 4, 4)),
     ])
 
