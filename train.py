@@ -32,7 +32,6 @@ from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
 from torchvision.transforms import Resize
 from data.resize import Resize
-import config
 
 # those words used when building the dataset subject
 img = "img"
