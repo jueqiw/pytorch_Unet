@@ -30,7 +30,6 @@ from time import ctime
 from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
 from torchvision.transforms import Resize
-from data.resize import Resize
 
 # those words used when building the dataset subject
 img = "img"
@@ -136,13 +135,12 @@ if __name__ == "__main__":
         ZNormalization(masking_method=ZNormalization.mean),
         RandomNoise(),
         ToCanonical(),
-        # Resample((4, 4, 4)),  # do not know what it do
+        Resample(128    ),  # do not know what it do
         RandomFlip(axes=(0,)),
         OneOf({
             RandomAffine(): 0.8,
             RandomElasticDeformation(): 0.2,
         }),
-        Resize(128),
     ])
 
     validation_transform = Compose([
