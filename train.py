@@ -45,6 +45,7 @@ class Action(enum.Enum):
 def prepare_batch(batch, device):
     inputs = batch[img][DATA].to(device)
     foreground = batch[label][DATA].to(device)
+    foreground[foreground > 0.5] = 1
     background = 1 - foreground
     targets = torch.cat((background, foreground), dim=CHANNELS_DIMENSION)
     return inputs, targets
@@ -137,7 +138,7 @@ if __name__ == "__main__":
         ZNormalization(masking_method=ZNormalization.mean),
         RandomNoise(),
         ToCanonical(),
-        Pad((256, 256, 256)),  # do not know what it do
+        CropOrPad((256, 256, 256)),  # do not know what it do
         RandomFlip(axes=(0,)),
         OneOf({
             RandomAffine(): 0.8,
@@ -149,7 +150,7 @@ if __name__ == "__main__":
         # HistogramStandardization(landmarks_dict={MRI: landmarks}),
         ZNormalization(masking_method=ZNormalization.mean),
         ToCanonical(),
-        Pad((256, 256, 256)),
+        CropOrPad((256, 256, 256)),
         # Resample((4, 4, 4)),
     ])
 
