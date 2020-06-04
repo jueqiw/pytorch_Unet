@@ -18,7 +18,7 @@ LEARN_RATE = 0.001
 #
 # ADNI_LABEL = "brain_extraction"
 
-DATA_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+DATA_ROOT = Path(__file__).resolve().parent.parent / "data"
 
 print(DATA_ROOT)
 
