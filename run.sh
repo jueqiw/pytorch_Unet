@@ -11,9 +11,7 @@ module load cuda cudnn
 source /home/jueqi/tensorflow/bin/activate
 
 cd $SLURM_TMPDIR
-pwd
 mkdir work
-cd work
 # --strip-components prevents making double parent directory
 echo "$(date +"%T"):  Copying data"
 tar -xf /home/jueqi/projects/def-jlevman/jueqi/my_data.tar -C work --strip-components 1 && echo "$(date +"%T"):  Copied data"
