@@ -13,13 +13,14 @@ cd $SLURM_SUBMIT_DIR
 module load cuda cudnn
 source /home/jueqi/tensorflow/bin/activate
 
-mkdir $SLURM_TMPDIR/data
-cd data
-pwd
+mkdir $SLURM_TMPDIR/work
+cd work
 # --strip-components prevents making double parent directory
 echo "$(date +"%T"):  Copying data"
-tar -xf /home/jueqi/projects/def-jlevman/jueqi/data.tar -C data --strip-components 1 && echo "$(date +"%T"):  Copied data"
+tar -xf /home/jueqi/projects/def-jlevman/jueqi/data.tar -C work --strip-components 1 && echo "$(date +"%T"):  Copied data"
 # Now do my computations here on the local disk using the contents of the extracted archive...
+
+tree
 
 ## The computations are done, so clean up the data set...
 #cd $SLURM_TMPDIR
