@@ -1,5 +1,8 @@
 from pathlib import Path
 import os
+import argparse
+import torch
+from ..config import Option
 
 SIZE = 128
 LEARN_RATE = 0.001
@@ -18,7 +21,8 @@ LEARN_RATE = 0.001
 #
 # ADNI_LABEL = "brain_extraction"
 
-DATA_ROOT = Path(__file__).resolve().parent.parent.parent / "work"
+
+DATA_ROOT = Option.parse().data_dir / "work"
 
 print(DATA_ROOT)
 

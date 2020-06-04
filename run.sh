@@ -16,12 +16,13 @@ mkdir work
 echo "$(date +"%T"):  Copying data"
 tar -xf /home/jueqi/projects/def-jlevman/jueqi/my_data.tar -C work --strip-components 1 && echo "$(date +"%T"):  Copied data"
 # Now do my computations here on the local disk using the contents of the extracted archive...
-pwd
 
 ## The computations are done, so clean up the data set...
 #cd $SLURM_TMPDIR
 #tar -cf ~/projects/def-foo/johndoe/results.tar work
 
+
 # run script
 echo "$(date +"%T"):  Executing torch_test.py"
-python /home/jueqi/projects/def-jlevman/jueqi/pytorch_Unet/train.py && echo "$(date +"%T"):  Successfully executed train.py"
+python /home/jueqi/projects/def-jlevman/jueqi/pytorch_Unet/train.py \
+       --data_dir="$SLURM_TMPDIR" && echo "$(date +"%T"):  Successfully executed train.py"
