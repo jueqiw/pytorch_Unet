@@ -18,7 +18,7 @@ mkdir work
 cd work
 # --strip-components prevents making double parent directory
 echo "$(date +"%T"):  Copying data"
-tar -xf ~/projects/def-foo/johndoe/my_data.tar -C work --strip-components 1 && echo "$(date +"%T"):  Copied data"
+tar -xf ~/projects/def-jlevmen/jueqi/data.tar -C work --strip-components 1 && echo "$(date +"%T"):  Copied data"
 # Now do my computations here on the local disk using the contents of the extracted archive...
 
 
