@@ -24,11 +24,11 @@ DATA_ROOT = Path(opt.parse().data_dir) / "work"
 
 print(DATA_ROOT)
 
-CC359_DATASET_DIR = DATA_ROOT / "Original"
-CC359_LABEL_DIR = DATA_ROOT / "Skull-stripping-masks//STAPLE"
-CC359_MANUAL_LABEL_DIR = DATA_ROOT / "Skull-stripping-masks//Manual"
+CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
+CC359_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//STAPLE"
+CC359_MANUAL_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//Manual"
 
-NFBS_DATASET_DIR = DATA_ROOT / "NFBS_Dataset"
+NFBS_DATASET_DIR = DATA_ROOT / "NFBS//NFBS_Dataset"
 
 ADNI_DATASET_DIR_1 = "/project/6005889/U-Net_MRI-Data/ADNI"
 ADNI_DATASET_DIR_2 = "/project/6005889/U-Net_MRI-Data/ADNI/ADNI"
