@@ -138,7 +138,7 @@ if __name__ == "__main__":
         ZNormalization(masking_method=ZNormalization.mean),
         RandomNoise(),
         ToCanonical(),
-        CropOrPad((256, 256, 256)),  # do not know what it do
+        CropOrPad((240, 240, 240)),  # do not know what it do
         RandomFlip(axes=(0,)),
         OneOf({
             RandomAffine(): 0.8,
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     print('Validation set:', len(validation_set), 'subjects')
 
     training_batch_size = 2
-    validation_batch_size = training_batch_size
+    validation_batch_size = 1
     num_epochs = 5
 
     training_loader = torch.utils.data.DataLoader(

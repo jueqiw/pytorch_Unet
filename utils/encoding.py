@@ -25,7 +25,7 @@ class Encoder(nn.Module):
         self.encoding_blocks = nn.ModuleList()
         self.dilation = initial_dilation
         is_first_block = True
-        for _ in range(num_encoding_blocks):
+        for _ in range(num_encoding_blocks):  # 2
             encoding_block = EncodingBlock(
                 in_channels,
                 out_channels_first,

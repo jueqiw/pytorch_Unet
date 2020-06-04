@@ -15,7 +15,7 @@ class UNet(nn.Module):
     def __init__(
             self,
             in_channels: int = 1,
-            out_classes: int = 2,
+            out_classes: int = 2,  # 1
             dimensions: int = 2,
             num_encoding_blocks: int = 5,
             out_channels_first_layer: int = 64,
@@ -32,7 +32,7 @@ class UNet(nn.Module):
             monte_carlo_dropout: float = 0,
             ):
         super().__init__()
-        depth = num_encoding_blocks - 1
+        depth = num_encoding_blocks - 1  # 2
 
         # Force padding if residual blocks
         if residual:
@@ -139,8 +139,8 @@ class UNet3D(UNet):
     def __init__(self, *args, **user_kwargs):
         kwargs = {}
         kwargs['dimensions'] = 3
-        kwargs['num_encoding_blocks'] = 4
-        kwargs['out_channels_first_layer'] = 32
+        kwargs['num_encoding_blocks'] = 3  # 4
+        kwargs['out_channels_first_layer'] = 16
         kwargs['normalization'] = 'batch'
         kwargs.update(user_kwargs)
         super().__init__(*args, **kwargs)

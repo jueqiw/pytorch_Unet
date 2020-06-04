@@ -10,7 +10,7 @@ class ConvolutionalBlock(nn.Module):
             in_channels: int,
             out_channels: int,
             normalization: Optional[str] = None,
-            kernel_size: int = 3,
+            kernel_size: int = 5,
             activation: Optional[str] = 'ReLU',
             preactivation: bool = False,
             padding: int = 0,
