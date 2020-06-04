@@ -1,8 +1,4 @@
-from pathlib import Path
-import os
-import argparse
-import torch
-from ..config import Option
+from Code.data.config import Option
 
 SIZE = 128
 LEARN_RATE = 0.001
