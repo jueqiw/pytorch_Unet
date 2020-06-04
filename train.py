@@ -148,6 +148,7 @@ if __name__ == "__main__":
         # HistogramStandardization(landmarks_dict={MRI: landmarks}),
         ZNormalization(masking_method=ZNormalization.mean),
         ToCanonical(),
+        CropOrPad((256, 256, 256)),
         # Resample((4, 4, 4)),
     ])
 
@@ -175,15 +176,15 @@ if __name__ == "__main__":
         training_set,
         batch_size=training_batch_size,
         shuffle=True,
-        # num_workers=multiprocessing.cpu_count(),
-        num_workers=0,
+        num_workers=multiprocessing.cpu_count(),
+        # num_workers=0,
     )
 
     validation_loader = torch.utils.data.DataLoader(
         validation_set,
         batch_size=validation_batch_size,
-        # num_workers=multiprocessing.cpu_count(),
-        num_workers=0,
+        num_workers=multiprocessing.cpu_count(),
+        # num_workers=0,
     )
 
     # one_batch = next(iter(training_loader))
