@@ -148,7 +148,6 @@ if __name__ == "__main__":
         # HistogramStandardization(landmarks_dict={MRI: landmarks}),
         ZNormalization(masking_method=ZNormalization.mean),
         ToCanonical(),
-        Resample(128)
         # Resample((4, 4, 4)),
     ])
 
