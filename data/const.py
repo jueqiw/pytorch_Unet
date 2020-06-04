@@ -17,8 +17,9 @@ LEARN_RATE = 0.001
 #
 # ADNI_LABEL = "brain_extraction"
 
+opt = Option()
 
-DATA_ROOT = Option.parse().data_dir / "work"
+DATA_ROOT = opt.parse().data_dir / "work"
 
 print(DATA_ROOT)
 
