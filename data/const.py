@@ -1,4 +1,5 @@
 from .config import Option
+from pathlib import Path
 
 SIZE = 128
 LEARN_RATE = 0.001
@@ -19,7 +20,7 @@ LEARN_RATE = 0.001
 
 opt = Option()
 
-DATA_ROOT = opt.parse().data_dir / "work"
+DATA_ROOT = Path(opt.parse().data_dir) / "work"
 
 print(DATA_ROOT)
 
