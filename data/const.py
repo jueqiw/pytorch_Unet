@@ -1,4 +1,4 @@
-from Code.data.config import Option
+from .config import Option
 
 SIZE = 128
 LEARN_RATE = 0.001
