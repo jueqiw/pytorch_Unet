@@ -28,4 +28,4 @@ tar -xf ~/projects/def-jlevmen/jueqi/data.tar -C work --strip-components 1 && ec
 
 # run script
 echo "$(date +"%T"):  Executing torch_test.py"
-python ./train.py && echo "$(date +"%T"):  Successfully executed torch_test.py"
+python /home/jueqi/projects/def-jlevman/jueqi/pytorch_Unet/train.py && echo "$(date +"%T"):  Successfully executed torch_test.py"
