@@ -170,7 +170,7 @@ if __name__ == "__main__":
     print('Training set:', len(training_set), 'subjects')
     print('Validation set:', len(validation_set), 'subjects')
 
-    training_batch_size = 4
+    training_batch_size = 2
     validation_batch_size = training_batch_size
     num_epochs = 5
 
