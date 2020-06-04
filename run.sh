@@ -15,9 +15,10 @@ source /home/jueqi/tensorflow/bin/activate
 
 mkdir $SLURM_TMPDIR/data
 cd data
+pwd
 # --strip-components prevents making double parent directory
 echo "$(date +"%T"):  Copying data"
-tar -xf ~/projects/def-jlevmen/jueqi/data.tar -C work --strip-components 1 && echo "$(date +"%T"):  Copied data"
+tar -xf /home/jueqi/projects/def-jlevman/jueqi/data.tar -C work --strip-components 1 && echo "$(date +"%T"):  Copied data"
 # Now do my computations here on the local disk using the contents of the extracted archive...
 
 ## The computations are done, so clean up the data set...
