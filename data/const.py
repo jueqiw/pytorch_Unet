@@ -18,10 +18,9 @@ LEARN_RATE = 0.001
 #
 # ADNI_LABEL = "brain_extraction"
 
-DATA_ROOT = Path(__file__).resolve().parent.parent
+DATA_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
-for file in os.listdir(DATA_ROOT):
-    print(file)
+print(DATA_ROOT)
 
 CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
 CC359_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//STAPLE"
