@@ -13,8 +13,8 @@ cd $SLURM_SUBMIT_DIR
 module load cuda cudnn
 source /home/jueqi/tensorflow/bin/activate
 
-mkdir $SLURM_TMPDIR/data
-cd data
+mkdir $SLURM_TMPDIR/work
+cd work
 pwd
 # --strip-components prevents making double parent directory
 echo "$(date +"%T"):  Copying data"
