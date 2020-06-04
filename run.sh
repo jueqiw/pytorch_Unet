@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --gres=gpu:t4:1  # request GPU "generic resource"
 #SBATCH --cpus-per-task=8   # maximum CPU cores per GPU request: 6 on Cedar, 16 on Graham.
-#SBATCH --mem=200G   # memory
+#SBATCH --mem=150G   # memory
 #SBATCH --output=out-path.out  # %N for node name, %j for jobID
 #SBATCH --time=00-03:00      # time (DD-HH:MM)
 #SBATCH --mail-user=x2019cwn@stfx.ca # used to send email
