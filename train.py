@@ -32,6 +32,7 @@ from time import ctime
 from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
 from torchvision.transforms import Resize
+from torchsummary import summary
 
 # those words used when building the dataset subject
 img = "img"
@@ -83,7 +84,7 @@ def get_model_and_optimizer(device):
         dimensions=3,
         num_encoding_blocks=3,
         out_channels_first_layer=8,
-        normalization='batch',
+        # normalization='batch',
         upsampling_type='linear',
         padding=True,
         activation='PReLU',
@@ -199,6 +200,8 @@ if __name__ == "__main__":
     # save_image(slices, image_path, nrow=training_batch_size // 2, normalize=True, scale_each=True)
 
     model, optimizer = get_model_and_optimizer(device)
+
+    summary(model, (1, 240, 240, 240))
 
     weights_stem = 'whole_images'
     train(num_epochs, training_loader, validation_loader, model, optimizer, weights_stem)

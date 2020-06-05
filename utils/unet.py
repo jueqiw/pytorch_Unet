@@ -84,7 +84,7 @@ class UNet(nn.Module):
         # elif dimensions == 3:
         #     power = depth
 
-        in_channels = self.bottom_block.out_channels  # 32
+        in_channels = self.encoder.out_channels  # 32
         print("last level in_channels:", in_channels)
         in_channels_skip_connection = out_channels_first_layer  # 32
 
