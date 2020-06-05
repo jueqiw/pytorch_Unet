@@ -41,13 +41,9 @@ class Decoder(nn.Module):
                 in_channels_skip_connection,
                 dimensions,
                 upsampling_type,
-                # normalization=normalization,
-                # preactivation=preactivation,
-                # residual=residual,
                 padding=padding,
                 padding_mode=padding_mode,
                 activation=activation,
-                # dilation=self.dilation,
                 dropout=dropout,
             )
             self.decoding_blocks.append(decoding_block)
@@ -132,17 +128,10 @@ class DecodingBlock(nn.Module):
 
     def forward(self, skip_connection, x):
         x = self.upsample(x)  # upConvLayer
-        # skip_connection = self.center_crop(skip_connection, x)
-        skip_connection = x
+        skip_connection = self.center_crop(skip_connection, x)
+        # skip_connection = x
         x = torch.cat((skip_connection, x), dim=CHANNELS_DIMENSION)
-        # if self.residual:
-        #     connection = self.conv_residual(x)
-        #     x = self.conv1(x)
-        #     x = self.conv2(x)
-        #     x += connection
-        # else:
         x = self.conv1(x)
-        # x = self.conv2(x)
         return x
 
     def center_crop(self, skip_connection, x):

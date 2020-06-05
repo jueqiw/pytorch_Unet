@@ -46,9 +46,9 @@ class Encoder(nn.Module):
             if dimensions == 2:
                 in_channels = out_channels_first
                 out_channels_first = in_channels * 2
-            elif dimensions == 3:
-                in_channels = 2 * out_channels_first
-                out_channels_first = in_channels
+            elif dimensions == 3:  # ?
+                in_channels = out_channels_first
+                out_channels_first = in_channels * 2
             # dilation is always None
             # if self.dilation is not None:
             #     self.dilation *= 2
