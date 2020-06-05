@@ -99,7 +99,7 @@ class DecodingBlock(nn.Module):
             padding=padding,
             padding_mode=padding_mode,
             activation=activation,
-                dilation=dilation,
+            dilation=dilation,
             dropout=dropout,
             max_pooling=False
         )
@@ -137,6 +137,9 @@ class DecodingBlock(nn.Module):
         return x
 
     def center_crop(self, skip_connection, x):
+        # c = (bypass.size()[2] - upsampled.size()[2]) // 2
+        # bypass = F.pad(bypass, (-c, -c, -c, -c))
+
         skip_shape = torch.tensor(skip_connection.shape)
         x_shape = torch.tensor(x.shape)
         crop = skip_shape[2:] - x_shape[2:]
