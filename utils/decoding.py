@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from .conv import ConvolutionalBlock
 
 CHANNELS_DIMENSION = 1
-UPSAMPLING_MODES = (
+UPSAMPLING_MODES = (  # ?
     'nearest',
     'linear',
     'bilinear',
@@ -175,7 +175,7 @@ def get_conv_transpose_layer(dimensions, in_channels, out_channels):
     return conv_layer
 
 
-def fix_upsampling_type(upsampling_type: str, dimensions: int):
+def fix_upsampling_type(upsampling_type: str, dimensions: int):  # ??
     if upsampling_type == 'linear':
         if dimensions == 2:
             upsampling_type = 'bilinear'

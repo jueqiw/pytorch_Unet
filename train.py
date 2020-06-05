@@ -41,6 +41,7 @@ img = "img"
 label = "label"
 dir_checkpoint = 'checkpoints/'
 
+
 class Action(enum.Enum):
     TRAIN = 'Training'
     VALIDATE = 'Validation'
@@ -94,7 +95,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
                 batch_loss.backward()
                 optimizer.step()
             epoch_losses.append(batch_loss.item())
-        print()
+        print(f'Epoch:  {epoch_idx} | train lose')
     epoch_losses = np.array(epoch_losses)
     print(f'{action.value} mean loss: {epoch_losses.mean():0.3f}')
 
@@ -181,6 +182,9 @@ if __name__ == "__main__":
     )
 
     model, optimizer = get_model_and_optimizer(device)
+    logging.info(f'Network:\n'
+                 f'\t{model.n_channels} input channels\n'
+                 f'\t{model.n_classes} output channels (classes)\n')
 
     weights_stem = 'whole_images'
     train(num_epochs, training_loader, validation_loader, model, optimizer, weights_stem)
