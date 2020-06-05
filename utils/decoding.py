@@ -102,7 +102,7 @@ class DecodingBlock(nn.Module):
             activation=activation,
             dilation=dilation,
             dropout=dropout,
-            max_pool=False
+            # max_pool=False
         )
 
         # in_channels_second = out_channels
@@ -142,7 +142,6 @@ class DecodingBlock(nn.Module):
         # else:
         x = self.conv1(x)
         # x = self.conv2(x)
-
         return x
 
     def center_crop(self, skip_connection, x):

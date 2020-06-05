@@ -32,7 +32,7 @@ class UNet(nn.Module):
             monte_carlo_dropout: float = 0,
             ):
         super().__init__()
-        depth = num_encoding_blocks - 1  # 2
+        depth = num_encoding_blocks  # 3
 
         # Force padding if residual blocks
         if residual:
@@ -55,34 +55,34 @@ class UNet(nn.Module):
             dropout=dropout,
         )
 
-        # Bottom (last encoding block)
-        in_channels = self.encoder.out_channels
-        if dimensions == 2:
-            out_channels_first = 2 * in_channels
-        else:
-            # out_channels_first = in_channels
-            out_channels_first = 2 * in_channels
-
-        self.bottom_block = EncodingBlock(
-            in_channels,
-            out_channels_first,
-            dimensions,
-            normalization,
-            # pooling_type=None,
-            # preactivation=preactivation,
-            # residual=residual,
-            padding=padding,
-            padding_mode=padding_mode,
-            activation=activation,
-            # dilation=self.encoder.dilation,
-            dropout=dropout,
-        )
+        # # Bottom (last encoding block)
+        # in_channels = self.encoder.out_channels
+        # if dimensions == 2:
+        #     out_channels_first = 2 * in_channels
+        # else:
+        #     # out_channels_first = in_channels
+        #     out_channels_first = 2 * in_channels
+        #
+        # self.bottom_block = EncodingBlock(
+        #     in_channels,
+        #     out_channels_first,
+        #     dimensions,
+        #     normalization,
+        #     # pooling_type=None,
+        #     # preactivation=preactivation,
+        #     # residual=residual,
+        #     padding=padding,
+        #     padding_mode=padding_mode,
+        #     activation=activation,
+        #     # dilation=self.encoder.dilation,
+        #     dropout=dropout,
+        # )
 
         # Decoder
-        if dimensions == 2:
-            power = depth - 1
-        elif dimensions == 3:
-            power = depth
+        # if dimensions == 2:
+        #     power = depth - 1
+        # elif dimensions == 3:
+        #     power = depth
 
         in_channels = self.bottom_block.out_channels  # 32
         print("last level in_channels:", in_channels)

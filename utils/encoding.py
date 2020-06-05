@@ -40,7 +40,6 @@ class Encoder(nn.Module):
                 activation=activation,
                 dilation=self.dilation,
                 dropout=dropout,
-
             )
             is_first_block = False
             self.encoding_blocks.append(encoding_block)
