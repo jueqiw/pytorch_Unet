@@ -73,7 +73,7 @@ class EncodingBlock(nn.Module):
             dimensions: int,
             # normalization: Optional[str],
             pooling_type: Optional[str],
-            # preactivation: bool = False,
+            preactivation: bool = False,
             is_first_block: bool = False,
             # residual: bool = False,
             padding: int = 0,
