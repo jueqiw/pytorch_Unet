@@ -129,9 +129,7 @@ if __name__ == "__main__":
     )
 
     model, optimizer = get_model_and_optimizer(device)
-    logging.info(f'Network:\n'
-                 f'\t{model.in_channels} input channels\n'
-                 f'\t{model.out_classes} output channels (classes)\n')
+    logging.info(f'get Network!\n')
 
     if args.load:
         model.load_state_dict(
