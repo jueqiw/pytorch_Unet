@@ -1,6 +1,6 @@
 import torch
 from torchio import AFFINE, DATA, PATH, TYPE, STEM
-# from data.get_dataset import get_dataset
+from data.get_dataset import get_dataset
 import warnings
 from torchio.transforms import (
     RandomFlip,
@@ -23,7 +23,7 @@ from torchio.transforms import (
 import torchio
 import numpy as np
 from utils.unet import UNet, UNet3D
-# from data.const import *
+from data.const import *
 import enum
 import SimpleITK as sitk
 import multiprocessing
