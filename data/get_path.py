@@ -28,9 +28,9 @@ def get_path(datasets):
                 label_file = cur.name + ".gz"
                 if label_file in brain_label_set:
                     mri = MRI(dataset, original)
-                    yield mri
+                    return mri
 
         else:
             for file_name in os.listdir(dataset):
                 mri = MRI(dataset, file_name)
-                yield mri
+                return mri

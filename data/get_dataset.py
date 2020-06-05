@@ -12,6 +12,18 @@ from time import ctime
 import numpy as np
 
 
+def get_img(mri_list):
+    for mri in mri_list:
+        try:
+            img = tio.Image(path=mri.img_path, type=tio.INTENSITY)
+            label = tio.Image(path=mri.img_path, type=tio.LABEL)
+            label.tensor.squeeze()
+            yield img, label
+        except OSError as e:
+            print("not such img file:", mri.img_path)
+
+
+
 def get_dataset(datasets):
     """
     get data from the path and do augmentation on it, and return a DataLoader
@@ -26,10 +38,10 @@ def get_dataset(datasets):
     # in case some times found the file isnt exist like ".xxx" system file
     subjects = [
         tio.Subject(
-            img=tio.Image(path=mri.img_path, type=tio.INTENSITY),  # T1W image to be segmented
-            label=tio.Image(path=mri.label_path, type=tio.LABEL),  # brain mask we are predicting
+            img=img, # T1W image to be segmented
+            label=label,  # brain mask we are predicting
         )
-        for mri in get_path(datasets)
+        for img, label in get_img(mri_list)
         ]
     print(f"{ctime()}: getting number of subjects {len(subjects)}")
     return subjects

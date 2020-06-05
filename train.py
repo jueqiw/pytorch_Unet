@@ -126,8 +126,8 @@ if __name__ == "__main__":
     CHANNELS_DIMENSION = 1
     SPATIAL_DIMENSIONS = 2, 3, 4
 
-    datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
-    # datasets = [CC359_DATASET_DIR]
+    # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
+    datasets = [CC359_DATASET_DIR]
     subjects = get_dataset(datasets)
 
     training_transform = Compose([
