@@ -53,8 +53,8 @@ def get_subjects(datasets):
     #     ]
     subjects = [
         tio.Subject(
-            img=tio.Image(tensor=mri.img_path, label=tio.INTENSITY),  # image to be segmented
-            label=tio.Image(tensor=mri.label_path, label=tio.LABEL),  # brain mask we are predicting
+            img=tio.Image(path=mri.img_path, label=tio.INTENSITY),  # image to be segmented
+            label=tio.Image(path=mri.label_path, label=tio.LABEL),  # brain mask we are predicting
         )
         for mri in mri_list
         ]
