@@ -7,7 +7,8 @@ import numpy as np
 from utils.unet import UNet, UNet3D
 from data.const import *
 from utils.loss import get_dice_loss
-from .data.get_datasets import get_dataset
+from data.get_datasets import get_dataset
+from data.config import Option
 import enum
 import SimpleITK as sitk
 import multiprocessing
@@ -128,6 +129,13 @@ if __name__ == "__main__":
     logging.info(f'Network:\n'
                  f'\t{model.n_channels} input channels\n'
                  f'\t{model.n_classes} output channels (classes)\n')
+
+    # if args.load:
+    #     net.load_state_dict(
+    #         torch.load(args.load, map_location=device)
+    #     )
+    #     logging.info(f'Model loaded from {args.load}')
+
 
     weights_stem = 'whole_images'
     train(num_epochs, training_loader, validation_loader, model, optimizer, weights_stem)
