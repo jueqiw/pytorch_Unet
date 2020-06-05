@@ -32,7 +32,7 @@ def get_img(mri_list):
         yield from_numpy(img), from_numpy(label)
 
 
-def get_dataset(datasets):
+def get_subjects(datasets):
     """
     get data from the path and do augmentation on it, and return a DataLoader
     :param datasets: the list of datasets folder name
@@ -58,4 +58,4 @@ def get_dataset(datasets):
 if __name__ == '__main__':
     # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
     datasets = [CC359_DATASET_DIR]
-    get_dataset(datasets)
+    get_subjects(datasets)

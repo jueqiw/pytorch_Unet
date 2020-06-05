@@ -7,6 +7,7 @@ import numpy as np
 from utils.unet import UNet, UNet3D
 from data.const import *
 from utils.loss import get_dice_loss
+from .data.get_datasets import get_dataset
 import enum
 import SimpleITK as sitk
 import multiprocessing
@@ -104,6 +105,9 @@ if __name__ == "__main__":
     training_batch_size = 2
     validation_batch_size = 1
     num_epochs = 1000
+
+    datasets = [CC359_DATASET_DIR]
+    training_set, validation_set = get_dataset(datasets)
 
     training_loader = torch.utils.data.DataLoader(
         training_set,

@@ -1,4 +1,4 @@
-from .get_dataset import *
+from .get_subjects import *
 import torchio
 from torchio.transforms import (
     RandomFlip,
@@ -18,10 +18,11 @@ from torchio.transforms import (
     Compose,
 )
 
-def get_():
+
+def get_dataset(datasets):
     # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
-    datasets = [CC359_DATASET_DIR]
-    subjects = get_dataset(datasets)
+    # datasets = [CC359_DATASET_DIR]
+    subjects = get_subjects(datasets)
 
     training_transform = Compose([
         RescaleIntensity((0, 1)),  # so that there are no negative values for RandomMotion
