@@ -23,7 +23,6 @@ def get_img(mri_list):
             print("not such img file:", mri.img_path)
 
 
-
 def get_dataset(datasets):
     """
     get data from the path and do augmentation on it, and return a DataLoader

@@ -189,14 +189,14 @@ if __name__ == "__main__":
         # num_workers=0,
     )
 
-    one_batch = next(iter(training_loader))
-
-    k = 4
-    batch_mri = one_batch[img][DATA][..., k]
-    batch_label = one_batch[label][DATA][..., k]
-    slices = torch.cat((batch_mri, batch_label))
-    image_path = 'batch_whole_images.png'
-    save_image(slices, image_path, nrow=training_batch_size // 2, normalize=True, scale_each=True)
+    # one_batch = next(iter(training_loader))
+    #
+    # k = 4
+    # batch_mri = one_batch[img][DATA][..., k]
+    # batch_label = one_batch[label][DATA][..., k]
+    # slices = torch.cat((batch_mri, batch_label))
+    # image_path = 'batch_whole_images.png'
+    # save_image(slices, image_path, nrow=training_batch_size // 2, normalize=True, scale_each=True)
 
     model, optimizer = get_model_and_optimizer(device)
 

@@ -1,5 +1,6 @@
 import torch
 from utils.unet import UNet
+from torchsummary import summary
 
 
 def get_model_and_optimizer(device):
@@ -20,4 +21,4 @@ def get_model_and_optimizer(device):
 
 device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
 model, optimizer = get_model_and_optimizer(device)
-print(model)
+summary(model, (3, 240, 240, 240))
