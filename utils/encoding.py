@@ -25,7 +25,7 @@ class Encoder(nn.Module):
         self.encoding_blocks = nn.ModuleList()
         self.dilation = initial_dilation
         is_first_block = True
-        for _ in range(num_encoding_blocks):  # 2
+        for _ in range(num_encoding_blocks):  # 3
             encoding_block = EncodingBlock(
                 in_channels,
                 out_channels_first,
@@ -49,6 +49,7 @@ class Encoder(nn.Module):
             elif dimensions == 3:  # ?
                 in_channels = out_channels_first
                 out_channels_first = in_channels * 2
+
             # dilation is always None
             # if self.dilation is not None:
             #     self.dilation *= 2
@@ -128,8 +129,6 @@ class EncodingBlock(nn.Module):
             dilation=dilation,
             dropout=dropout,
         )
-
-        # self.maxpool3d = nn.MaxPool3d(2, stride=2)
 
         # if residual:
         #     self.conv_residual = ConvolutionalBlock(

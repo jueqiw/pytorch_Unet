@@ -29,13 +29,13 @@ class Decoder(nn.Module):
             padding: int = 0,
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
-            # initial_dilation: Optional[int] = None,
+            initial_dilation: Optional[int] = None,
             dropout: float = 0.3,
             ):
         super().__init__()
         upsampling_type = fix_upsampling_type(upsampling_type, dimensions)
         self.decoding_blocks = nn.ModuleList()
-        # self.dilation = initial_dilation
+        self.dilation = initial_dilation
         for _ in range(num_decoding_blocks):  # 3
             decoding_block = DecodingBlock(
                 in_channels_skip_connection,
@@ -47,9 +47,11 @@ class Decoder(nn.Module):
                 dropout=dropout,
             )
             self.decoding_blocks.append(decoding_block)
+            print(in_channels_skip_connection)
             in_channels_skip_connection //= 2
-            # if self.dilation is not None:
-            #     self.dilation //= 2
+            if self.dilation is not None:
+                self.dilation //= 2
+
 
     def forward(self, skip_connections, x):
         zipped = zip(reversed(skip_connections), self.decoding_blocks)

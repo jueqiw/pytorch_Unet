@@ -59,6 +59,7 @@ class UNet(nn.Module):
         # in_channels = 32
         # print("last level in_channels:", in_channels)
         in_channels_skip_connection = in_channels  # 32
+        # print(f"decoder input {in_channels}")
 
         num_decoding_blocks = depth  # 3
         self.decoder = Decoder(  # 3 decoder level
