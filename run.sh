@@ -14,7 +14,7 @@ echo "$(date +"%T"):  Activated python virtualenv"
 pip3 install --no-index torch nibabel  && echo "$(date +"%T"):  Installed nibabel, torch"
 pip3 install --no-index torchio && echo "$(date +"%T"):  Installed torchio from local wheel!"
 pip3 install --no-index scikit-image && echo "$(date +"%T"):  Installed torchio from local wheel!"
-pip3 install --no-index torchsummary
+
 echo -e '\n\n\n'
 cd $SLURM_TMPDIR
 mkdir work
