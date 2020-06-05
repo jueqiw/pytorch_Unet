@@ -38,7 +38,7 @@ class UNet(nn.Module):
         if residual:
             padding = 1
 
-        # Encoder Conv3D *2
+        # Encoder Conv3D *2 *2
         self.encoder = Encoder(
             in_channels,
             out_channels_first_layer,

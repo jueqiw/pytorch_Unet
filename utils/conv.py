@@ -17,7 +17,6 @@ class ConvolutionalBlock(nn.Module):
             padding_mode: str = 'zeros',
             dilation: Optional[int] = None,
             dropout: float = 0.3,
-            max_pool: bool = False,
             ):
         super().__init__()
 
@@ -68,17 +67,9 @@ class ConvolutionalBlock(nn.Module):
             dropout_layer = dropout_class(p=dropout)
             self.add_if_not_none(block, dropout_layer)
 
-        maxpool_layer = None
-        if max_pool:
-            class_name = 'MaxPool{}d'.format(dimensions)
-            maxpool_class = getattr(nn, class_name)
-            maxpool_layer = maxpool_class(2, stride=2)
-            self.add_if_not_none(block, maxpool_layer)
-
         self.conv_layer = conv_layer
         # self.norm_layer = norm_layer
         self.activation_layer = activation_layer
-        self.maxpool_layer = maxpool_layer
         self.dropout_layer = dropout_layer
 
         self.block = nn.Sequential(*block)

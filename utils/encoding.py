@@ -18,7 +18,7 @@ class Encoder(nn.Module):
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
             initial_dilation: Optional[int] = None,
-            dropout: float = 0,
+            dropout: float = 0.3,
             ):
         super().__init__()
 
@@ -40,6 +40,7 @@ class Encoder(nn.Module):
                 activation=activation,
                 dilation=self.dilation,
                 dropout=dropout,
+
             )
             is_first_block = False
             self.encoding_blocks.append(encoding_block)
@@ -72,8 +73,8 @@ class EncodingBlock(nn.Module):
             out_channels_first: int,
             dimensions: int,
             # normalization: Optional[str],
-            pooling_type: Optional[str],
-            preactivation: bool = False,
+            pooling_type: str = None,
+            # preactivation: bool = False,
             is_first_block: bool = False,
             # residual: bool = False,
             padding: int = 0,
@@ -155,11 +156,11 @@ class EncodingBlock(nn.Module):
         x = self.conv1(x)
         x = self.conv2(x)
 
-        # if self.downsample is None:
-        #     return x
-        # else:
-        skip_connection = x
-        x = self.downsample(x)
+        if self.downsample is None:
+            return x
+        else:
+            skip_connection = x
+            x = self.downsample(x)
         return x, skip_connection
 
     @property
