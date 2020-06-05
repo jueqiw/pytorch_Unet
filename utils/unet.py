@@ -17,8 +17,8 @@ class UNet(nn.Module):
             in_channels: int = 1,
             out_classes: int = 2,  # 1
             dimensions: int = 2,
-            num_encoding_blocks: int = 5,
-            out_channels_first_layer: int = 64,
+            num_encoding_blocks: int = 3,
+            out_channels_first_layer: int = 8,
             normalization: Optional[str] = None,
             pooling_type: str = 'max',
             upsampling_type: str = 'conv',
@@ -29,7 +29,7 @@ class UNet(nn.Module):
             activation: Optional[str] = 'ReLU',
             initial_dilation: Optional[int] = None,
             dropout: float = 0.3,
-            monte_carlo_dropout: float = 0,
+            monte_carlo_dropout: float = 0.3,
             ):
         super().__init__()
         depth = num_encoding_blocks  # 3
@@ -85,8 +85,9 @@ class UNet(nn.Module):
         #     power = depth
 
         in_channels = self.encoder.out_channels  # 32
-        print("last level in_channels:", in_channels)
-        in_channels_skip_connection = out_channels_first_layer  # 32
+        # in_channels = 32
+        # print("last level in_channels:", in_channels)
+        in_channels_skip_connection = in_channels  # 32
 
         num_decoding_blocks = depth  # 3
         self.decoder = Decoder(  # 3 decoder level
@@ -146,6 +147,6 @@ class UNet3D(UNet):
         kwargs['dimensions'] = 3
         kwargs['num_encoding_blocks'] = 3  # 4
         kwargs['out_channels_first_layer'] = 8
-        kwargs['normalization'] = 'batch'
+        # kwargs['normalization'] = 'batch'
         kwargs.update(user_kwargs)
         super().__init__(*args, **kwargs)

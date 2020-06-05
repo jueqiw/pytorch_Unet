@@ -83,6 +83,7 @@ class DecodingBlock(nn.Module):
 
         if upsampling_type == 'conv':
             # in_channels = out_channels = 2 * in_channels_skip_connection
+            print("in channels skip connection:", in_channels_skip_connection)
             in_channels = out_channels = in_channels_skip_connection
             self.upsample = get_conv_transpose_layer(
                 dimensions, in_channels, out_channels)
@@ -102,7 +103,7 @@ class DecodingBlock(nn.Module):
             activation=activation,
             dilation=dilation,
             dropout=dropout,
-            # max_pool=False
+            max_pooling=False
         )
 
         # in_channels_second = out_channels
