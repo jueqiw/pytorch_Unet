@@ -13,10 +13,10 @@ class Option():
                                  help='Learning rate', dest='lr')
         self.parser.add_argument('-f', '--load', dest='load', type=str, default=False,
                                  help='Load model from a .pth file')
-        self.parser.add_argument('-s', '--scale', dest='scale', type=float, default=0.5,
-                                 help='Downscaling factor of the images')
-        self.parser.add_argument('-v', '--validation', dest='val', type=float, default=10.0,
-                                 help='Percent of the data that is used as validation (0-100)')
+        # self.parser.add_argument('-s', '--scale', dest='scale', type=float, default=0.5,
+        #                          help='Downscaling factor of the images')
+        # self.parser.add_argument('-v', '--validation', dest='val', type=float, default=10.0,
+        #                          help='Percent of the data that is used as validation (0-100)')
 
     def parse(self):
         opt = self.parser.parse_args()
