@@ -8,4 +8,4 @@ from .utils.conv import *
 from .data.config import *
 from .data.get_path import *
 from .data.MRI import *
-from .data.get_dataset import *
+from .data.get_datasets import *

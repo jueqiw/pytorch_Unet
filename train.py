@@ -29,6 +29,7 @@ dir_checkpoint = 'checkpoints/'
 min_loss = float("inf")
 
 
+
 class Action(enum.Enum):
     TRAIN = 'Training'
     VALIDATE = 'Validation'

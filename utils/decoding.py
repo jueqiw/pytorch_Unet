@@ -87,7 +87,7 @@ class DecodingBlock(nn.Module):
         else:
             self.upsample = get_upsampling_layer(upsampling_type)
         in_channels_first = in_channels_skip_connection * 2
-        out_channels = in_channels_skip_connection
+        out_channels = in_channels_first
 
         self.conv1 = ConvolutionalBlock(
             dimensions,
@@ -98,7 +98,7 @@ class DecodingBlock(nn.Module):
             padding=padding,
             padding_mode=padding_mode,
             activation=activation,
-            dilation=dilation,
+                dilation=dilation,
             dropout=dropout,
             max_pooling=False
         )
