@@ -138,8 +138,8 @@ class DecodingBlock(nn.Module):
 
     def center_crop(self, skip_connection, x):
         c = (skip_connection.size()[2] - x.size()[2]) // 2
-        bypass = F.pad(skip_connection, [-c, -c, -c, -c])
-
+        print(c)
+        skip_connection = F.pad(skip_connection, [-c, -c, -c, -c])
         # skip_shape = torch.tensor(skip_connection.shape)
         # x_shape = torch.tensor(x.shape)
         # crop = skip_shape[2:] - x_shape[2:]
@@ -148,7 +148,7 @@ class DecodingBlock(nn.Module):
         # # Then pad will be (-2, -2, -3, -3, -9, -9)
         # pad = -torch.stack((half_crop, half_crop)).t().flatten()
         # skip_connection = F.pad(skip_connection, pad.tolist())
-        return bypass
+        return skip_connection
 
 
 def get_upsampling_layer(upsampling_type: str) -> nn.Upsample:
