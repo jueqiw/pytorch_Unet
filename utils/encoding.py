@@ -91,11 +91,11 @@ class EncodingBlock(nn.Module):
 
         if is_first_block:
             normalization = None
-            preactivation = None
+            # preactivation = None
         else:
             # normalization = self.normalization
             normalization = None
-            preactivation = self.preactivation
+            # preactivation = self.preactivation
 
         self.conv1 = ConvolutionalBlock(
             dimensions,
