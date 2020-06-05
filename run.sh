@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --gres=gpu:p100:1  # request GPU "generic resource"
-#SBATCH --cpus-per-task=16   # maximum CPU cores per GPU request: 6 on Cedar, 16 on Graham.
+#SBATCH --cpus-per-task=8   # maximum CPU cores per GPU request: 6 on Cedar, 16 on Graham.
 #SBATCH --mem=150G   # memory
 #SBATCH --output=out-path.out  # %N for node name, %j for jobID
 #SBATCH --time=00-03:00      # time (DD-HH:MM)
