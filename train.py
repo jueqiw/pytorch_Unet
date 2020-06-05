@@ -1,6 +1,6 @@
 import torch
 from torchio import AFFINE, DATA, PATH, TYPE, STEM
-from data.get_dataset import get_dataset
+from .data.get_dataset import get_dataset
 import warnings
 from torchio.transforms import (
     RandomFlip,
@@ -19,11 +19,11 @@ from torchio.transforms import (
     Pad,
     Compose,
 )
-
 import torchio
 import numpy as np
-from utils.unet import UNet, UNet3D
-from data.const import *
+from .utils.unet import UNet, UNet3D
+from .data.const import *
+from .utils.loss import get_dice_loss
 import enum
 import SimpleITK as sitk
 import multiprocessing
@@ -32,10 +32,14 @@ from time import ctime
 from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
 from torchvision.transforms import Resize
+import argparse
+import logging
+
 
 # those words used when building the dataset subject
 img = "img"
 label = "label"
+dir_checkpoint = 'checkpoints/'
 
 class Action(enum.Enum):
     TRAIN = 'Training'
@@ -49,24 +53,6 @@ def prepare_batch(batch, device):
     background = 1 - foreground
     targets = torch.cat((background, foreground), dim=CHANNELS_DIMENSION)
     return inputs, targets
-
-
-def get_dice_score(output, target, epsilon=1e-9):
-    p0 = output
-    g0 = target
-    p1 = 1 - p0
-    g1 = 1 - g0
-    tp = (p0 * g0).sum(dim=SPATIAL_DIMENSIONS)
-    fp = (p0 * g1).sum(dim=SPATIAL_DIMENSIONS)
-    fn = (p1 * g0).sum(dim=SPATIAL_DIMENSIONS)
-    num = 2 * tp
-    denom = 2 * tp + fp + fn + epsilon
-    dice_score = num / denom
-    return dice_score
-
-
-def get_dice_loss(output, target):
-    return 1 - get_dice_score(output, target)
 
 
 def forward(model, inputs):
@@ -108,6 +94,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
                 batch_loss.backward()
                 optimizer.step()
             epoch_losses.append(batch_loss.item())
+        print()
     epoch_losses = np.array(epoch_losses)
     print(f'{action.value} mean loss: {epoch_losses.mean():0.3f}')
 
@@ -122,7 +109,11 @@ def train(num_epochs, training_loader, validation_loader, model, optimizer, weig
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+    option = Option
+
     device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
+    logging.info(f'Using device {device}')
     CHANNELS_DIMENSION = 1
     SPATIAL_DIMENSIONS = 2, 3, 4
 
@@ -138,7 +129,7 @@ if __name__ == "__main__":
         ZNormalization(masking_method=ZNormalization.mean),
         RandomNoise(),
         ToCanonical(),
-        CropOrPad((240, 240, 240)),  # do not know what it do
+        # CropOrPad((240, 240, 240)),  # do not know what it do
         RandomFlip(axes=(0,)),
         OneOf({
             RandomAffine(): 0.8,
@@ -150,7 +141,7 @@ if __name__ == "__main__":
         # HistogramStandardization(landmarks_dict={MRI: landmarks}),
         ZNormalization(masking_method=ZNormalization.mean),
         ToCanonical(),
-        CropOrPad((240, 240, 240)),
+        # CropOrPad((240, 240, 240)),
         # Resample((4, 4, 4)),
     ])
 
@@ -188,15 +179,6 @@ if __name__ == "__main__":
         num_workers=multiprocessing.cpu_count(),
         # num_workers=0,
     )
-
-    # one_batch = next(iter(training_loader))
-    #
-    # k = 4
-    # batch_mri = one_batch[img][DATA][..., k]
-    # batch_label = one_batch[label][DATA][..., k]
-    # slices = torch.cat((batch_mri, batch_label))
-    # image_path = 'batch_whole_images.png'
-    # save_image(slices, image_path, nrow=training_batch_size // 2, normalize=True, scale_each=True)
 
     model, optimizer = get_model_and_optimizer(device)
 

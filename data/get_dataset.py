@@ -15,12 +15,20 @@ import numpy as np
 def get_img(mri_list):
     for mri in mri_list:
         try:
-            img = tio.Image(path=mri.img_path, type=tio.INTENSITY)
-            label = tio.Image(path=mri.img_path, type=tio.LABEL)
-            label.tensor.squeeze()
-            yield img, label
+            # in case some times found the file isnt exist like ".xxx" file
+            img = nib.load(mri.img_path).get_data()
+            label = nib.load(mri.img_path).get_data().squeeze()
         except OSError as e:
             print("not such img file:", mri.img_path)
+            continue
+        img = resize(img, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
+        label = resize(label, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
+        if np.isnan(np.max(img)):
+            continue
+
+        if np.isinf(np.max(label)):
+            continue
+        return from_numpy(img), from_numpy(label)
 
 
 def get_dataset(datasets):
@@ -37,8 +45,8 @@ def get_dataset(datasets):
     # in case some times found the file isnt exist like ".xxx" system file
     subjects = [
         tio.Subject(
-            img=img, # T1W image to be segmented
-            label=label,  # brain mask we are predicting
+            img=tio.Image(tensor=img, label=tio.INTENSITY), # T1W image to be segmented
+            label=tio.Image(tensor=label, label=tio.LABEL),  # brain mask we are predicting
         )
         for img, label in get_img(mri_list)
         ]

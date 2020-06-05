@@ -1,5 +1,5 @@
 import torch
-from utils.unet import UNet
+from .utils.unet import UNet
 from torchsummary import summary
 
 
