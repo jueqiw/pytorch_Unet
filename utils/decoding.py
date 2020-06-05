@@ -47,13 +47,13 @@ class Decoder(nn.Module):
                 padding=padding,
                 padding_mode=padding_mode,
                 activation=activation,
-                dilation=self.dilation,
+                # dilation=self.dilation,
                 dropout=dropout,
             )
             self.decoding_blocks.append(decoding_block)
             in_channels_skip_connection //= 2
-            if self.dilation is not None:
-                self.dilation //= 2
+            # if self.dilation is not None:
+            #     self.dilation //= 2
 
     def forward(self, skip_connections, x):
         zipped = zip(reversed(skip_connections), self.decoding_blocks)

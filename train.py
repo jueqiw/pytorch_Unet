@@ -1,6 +1,6 @@
 import torch
 from torchio import AFFINE, DATA, PATH, TYPE, STEM
-from data.get_dataset import get_dataset
+# from data.get_dataset import get_dataset
 import warnings
 from torchio.transforms import (
     RandomFlip,
@@ -23,7 +23,7 @@ from torchio.transforms import (
 import torchio
 import numpy as np
 from utils.unet import UNet, UNet3D
-from data.const import *
+# from data.const import *
 import enum
 import SimpleITK as sitk
 import multiprocessing
@@ -128,67 +128,67 @@ if __name__ == "__main__":
     SPATIAL_DIMENSIONS = 2, 3, 4
 
     # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
-    # datasets = [CC359_DATASET_DIR]
-    # subjects = get_dataset(datasets)
-    #
-    # training_transform = Compose([
-    #     RescaleIntensity((0, 1)),  # so that there are no negative values for RandomMotion
-    #     RandomMotion(),
-    #     # HistogramStandardization(landmarks_dict={MRI: landmarks}),
-    #     RandomBiasField(),
-    #     ZNormalization(masking_method=ZNormalization.mean),
-    #     RandomNoise(),
-    #     ToCanonical(),
-    #     CropOrPad((240, 240, 240)),  # do not know what it do
-    #     RandomFlip(axes=(0,)),
-    #     OneOf({
-    #         RandomAffine(): 0.8,
-    #         RandomElasticDeformation(): 0.2,
-    #     }),
-    # ])
-    #
-    # validation_transform = Compose([
-    #     # HistogramStandardization(landmarks_dict={MRI: landmarks}),
-    #     ZNormalization(masking_method=ZNormalization.mean),
-    #     ToCanonical(),
-    #     CropOrPad((240, 240, 240)),
-    #     # Resample((4, 4, 4)),
-    # ])
-    #
-    # num_subjects = len(subjects)
-    # print(f"{ctime}: get total number of {num_subjects} subjects")
-    # num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
-    #
-    # training_subjects = subjects[:num_training_subjects]
-    # validation_subjects = subjects[num_training_subjects:]
-    #
-    # training_set = torchio.ImagesDataset(
-    #     training_subjects, transform=training_transform)
-    #
-    # validation_set = torchio.ImagesDataset(
-    #     validation_subjects, transform=validation_transform)
-    #
-    # print('Training set:', len(training_set), 'subjects')
-    # print('Validation set:', len(validation_set), 'subjects')
-    #
-    # training_batch_size = 2
-    # validation_batch_size = 1
-    # num_epochs = 5
-    #
-    # training_loader = torch.utils.data.DataLoader(
-    #     training_set,
-    #     batch_size=training_batch_size,
-    #     shuffle=True,
-    #     num_workers=multiprocessing.cpu_count(),
-    #     # num_workers=0,
-    # )
-    #
-    # validation_loader = torch.utils.data.DataLoader(
-    #     validation_set,
-    #     batch_size=validation_batch_size,
-    #     num_workers=multiprocessing.cpu_count(),
-    #     # num_workers=0,
-    # )
+    datasets = [CC359_DATASET_DIR]
+    subjects = get_dataset(datasets)
+
+    training_transform = Compose([
+        RescaleIntensity((0, 1)),  # so that there are no negative values for RandomMotion
+        RandomMotion(),
+        # HistogramStandardization(landmarks_dict={MRI: landmarks}),
+        RandomBiasField(),
+        ZNormalization(masking_method=ZNormalization.mean),
+        RandomNoise(),
+        ToCanonical(),
+        CropOrPad((240, 240, 240)),  # do not know what it do
+        RandomFlip(axes=(0,)),
+        OneOf({
+            RandomAffine(): 0.8,
+            RandomElasticDeformation(): 0.2,
+        }),
+    ])
+
+    validation_transform = Compose([
+        # HistogramStandardization(landmarks_dict={MRI: landmarks}),
+        ZNormalization(masking_method=ZNormalization.mean),
+        ToCanonical(),
+        CropOrPad((240, 240, 240)),
+        # Resample((4, 4, 4)),
+    ])
+
+    num_subjects = len(subjects)
+    print(f"{ctime}: get total number of {num_subjects} subjects")
+    num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
+
+    training_subjects = subjects[:num_training_subjects]
+    validation_subjects = subjects[num_training_subjects:]
+
+    training_set = torchio.ImagesDataset(
+        training_subjects, transform=training_transform)
+
+    validation_set = torchio.ImagesDataset(
+        validation_subjects, transform=validation_transform)
+
+    print('Training set:', len(training_set), 'subjects')
+    print('Validation set:', len(validation_set), 'subjects')
+
+    training_batch_size = 2
+    validation_batch_size = 1
+    num_epochs = 5
+
+    training_loader = torch.utils.data.DataLoader(
+        training_set,
+        batch_size=training_batch_size,
+        shuffle=True,
+        num_workers=multiprocessing.cpu_count(),
+        # num_workers=0,
+    )
+
+    validation_loader = torch.utils.data.DataLoader(
+        validation_set,
+        batch_size=validation_batch_size,
+        num_workers=multiprocessing.cpu_count(),
+        # num_workers=0,
+    )
 
     # one_batch = next(iter(training_loader))
     #
@@ -201,14 +201,14 @@ if __name__ == "__main__":
 
     model, optimizer = get_model_and_optimizer(device)
 
-    summary(model, (1, 240, 240, 240))
+    # summary(model, (2, 4, 37, 37))
 
-    # weights_stem = 'whole_images'
-    # train(num_epochs, training_loader, validation_loader, model, optimizer, weights_stem)
-    #
-    # batch = next(iter(validation_loader))
-    # model.eval()
-    # inputs, targets = prepare_batch(batch, device)
-    # with torch.no_grad():
-    #     logits = forward(model, inputs)
+    weights_stem = 'whole_images'
+    train(num_epochs, training_loader, validation_loader, model, optimizer, weights_stem)
+
+    batch = next(iter(validation_loader))
+    model.eval()
+    inputs, targets = prepare_batch(batch, device)
+    with torch.no_grad():
+        logits = forward(model, inputs)
 
