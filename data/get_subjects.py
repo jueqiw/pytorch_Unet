@@ -44,12 +44,19 @@ def get_subjects(datasets):
     random.shuffle(mri_list)  # shuffle it to pick the val set
 
     # in case some times found the file isnt exist like ".xxx" system file
+    # subjects = [
+    #     tio.Subject(
+    #         img=tio.Image(tensor=img, label=tio.INTENSITY),  # image to be segmented
+    #         label=tio.Image(tensor=label, label=tio.LABEL),  # brain mask we are predicting
+    #     )
+    #     for img, label in get_img(mri_list)
+    #     ]
     subjects = [
         tio.Subject(
-            img=tio.Image(tensor=img, label=tio.INTENSITY),  # image to be segmented
-            label=tio.Image(tensor=label, label=tio.LABEL),  # brain mask we are predicting
+            img=tio.Image(tensor=mri.img_path, label=tio.INTENSITY),  # image to be segmented
+            label=tio.Image(tensor=mri.label_path, label=tio.LABEL),  # brain mask we are predicting
         )
-        for img, label in get_img(mri_list)
+        for mri in mri_list
         ]
     print(f"{ctime()}: getting number of subjects {len(subjects)}")
     return subjects

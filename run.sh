@@ -26,8 +26,13 @@ cd work
 ## The computations are done, so clean up the data set...
 #tar -cf ~/projects/def-foo/johndoe/results.tar work
 
+EPOCHS=10000
+
+
 # run script
 echo -e '\n\n\n'
 echo "$(date +"%T"):  Executing torch_test.py"
 python3 /home/jueqi/projects/def-jlevman/jueqi/pytorch_Unet/train.py \
-       --data_dir="$SLURM_TMPDIR" && echo "$(date +"%T"):  Successfully executed train.py"
+       --data_dir="$SLURM_TMPDIR" \
+       --epochs="$EPOCHS" \
+       && echo "$(date +"%T"):  Successfully executed train.py"

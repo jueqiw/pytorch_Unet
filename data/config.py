@@ -5,7 +5,7 @@ class Option():
     def __init__(self):
         self.parser = argparse.ArgumentParser(description='PyTorch Unet brain stripping')
         self.parser.add_argument('--data_dir', type=str, default='', help='the path of the dataset')
-        self.parser.add_argument('-e', '--epochs', metavar='E', type=int, default=5,
+        self.parser.add_argument('-e', '--epochs', metavar='E', type=int, default=10000,
                                  help='Number of epochs', dest='epochs')
         self.parser.add_argument('-b', '--batch-size', metavar='B', type=int, nargs='?', default=1,
                                  help='Batch size', dest='batchsize')

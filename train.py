@@ -140,7 +140,7 @@ if __name__ == "__main__":
 
     try:
         train(
-            num_epochs=num_epochs,
+            num_epochs=args.epochs,
             training_loader=training_loader,
             validation_loader=validation_loader,
             model=model,
