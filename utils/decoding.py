@@ -47,11 +47,10 @@ class Decoder(nn.Module):
                 dropout=dropout,
             )
             self.decoding_blocks.append(decoding_block)
-            print(in_channels_skip_connection)
+            # print(in_channels_skip_connection)
             in_channels_skip_connection //= 2
             if self.dilation is not None:
                 self.dilation //= 2
-
 
     def forward(self, skip_connections, x):
         zipped = zip(reversed(skip_connections), self.decoding_blocks)
@@ -87,7 +86,7 @@ class DecodingBlock(nn.Module):
                 dimensions, in_channels, out_channels)
         else:
             self.upsample = get_upsampling_layer(upsampling_type)
-        in_channels_first = in_channels_skip_connection
+        in_channels_first = in_channels_skip_connection * 2
         out_channels = in_channels_skip_connection
 
         self.conv1 = ConvolutionalBlock(
