@@ -87,6 +87,8 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
     print(f'{action.value} mean loss: {epoch_losses.mean():0.3f}')
     if action.value == Action.VALIDATE and epoch_losses < min_loss:
         min_loss = epoch_losses
+        torch.save(model.state_dict(), f'Epoch_{epoch_idx}_loss_{min_loss}.pth')
+        logging.info('Saved interrupt')
 
 
 def train(num_epochs, training_loader, validation_loader, model, optimizer):
@@ -107,7 +109,7 @@ if __name__ == "__main__":
     CHANNELS_DIMENSION = 1
     SPATIAL_DIMENSIONS = 2, 3, 4
 
-    training_batch_size = 2
+    training_batch_size = args.batchsize
     validation_batch_size = 1
     num_epochs = 1000
 
