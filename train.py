@@ -109,6 +109,7 @@ if __name__ == "__main__":
     validation_batch_size = 1
     num_epochs = 1000
 
+    # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
     datasets = [CC359_DATASET_DIR]
     training_set, validation_set = get_dataset(datasets)
 
@@ -129,8 +130,8 @@ if __name__ == "__main__":
 
     model, optimizer = get_model_and_optimizer(device)
     logging.info(f'Network:\n'
-                 f'\t{model.n_channels} input channels\n'
-                 f'\t{model.n_classes} output channels (classes)\n')
+                 f'\t{model.in_channels} input channels\n'
+                 f'\t{model.out_classes} output channels (classes)\n')
 
     if args.load:
         model.load_state_dict(
