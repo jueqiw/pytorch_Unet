@@ -21,6 +21,7 @@ def get_img(mri_list):
         except OSError as e:
             print("not such img file:", mri.img_path)
             continue
+
         img = resize(img, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
         label = resize(label, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
         if np.isnan(np.max(img)):
@@ -28,7 +29,7 @@ def get_img(mri_list):
 
         if np.isinf(np.max(label)):
             continue
-        return from_numpy(img), from_numpy(label)
+        yield from_numpy(img), from_numpy(label)
 
 
 def get_dataset(datasets):
@@ -45,7 +46,7 @@ def get_dataset(datasets):
     # in case some times found the file isnt exist like ".xxx" system file
     subjects = [
         tio.Subject(
-            img=tio.Image(tensor=img, label=tio.INTENSITY), # T1W image to be segmented
+            img=tio.Image(tensor=img, label=tio.INTENSITY),  # image to be segmented
             label=tio.Image(tensor=label, label=tio.LABEL),  # brain mask we are predicting
         )
         for img, label in get_img(mri_list)

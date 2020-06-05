@@ -2,23 +2,6 @@ import torch
 from torchio import AFFINE, DATA, PATH, TYPE, STEM
 from data.get_dataset import get_dataset
 import warnings
-from torchio.transforms import (
-    RandomFlip,
-    RandomAffine,
-    RandomElasticDeformation,
-    RandomNoise,
-    RandomMotion,
-    RandomBiasField,
-    RescaleIntensity,
-    Resample,
-    ToCanonical,
-    ZNormalization,
-    CropOrPad,
-    HistogramStandardization,
-    OneOf,
-    Pad,
-    Compose,
-)
 import torchio
 import numpy as np
 from utils.unet import UNet, UNet3D
@@ -111,56 +94,12 @@ def train(num_epochs, training_loader, validation_loader, model, optimizer, weig
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-    option = Option
+    option = Option()
 
     device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
     logging.info(f'Using device {device}')
     CHANNELS_DIMENSION = 1
     SPATIAL_DIMENSIONS = 2, 3, 4
-
-    # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
-    datasets = [CC359_DATASET_DIR]
-    subjects = get_dataset(datasets)
-
-    training_transform = Compose([
-        RescaleIntensity((0, 1)),  # so that there are no negative values for RandomMotion
-        RandomMotion(),
-        # HistogramStandardization(landmarks_dict={MRI: landmarks}),
-        RandomBiasField(),
-        ZNormalization(masking_method=ZNormalization.mean),
-        RandomNoise(),
-        ToCanonical(),
-        # CropOrPad((240, 240, 240)),  # do not know what it do
-        RandomFlip(axes=(0,)),
-        OneOf({
-            RandomAffine(): 0.8,
-            RandomElasticDeformation(): 0.2,
-        }),
-    ])
-
-    validation_transform = Compose([
-        # HistogramStandardization(landmarks_dict={MRI: landmarks}),
-        ZNormalization(masking_method=ZNormalization.mean),
-        ToCanonical(),
-        # CropOrPad((240, 240, 240)),
-        # Resample((4, 4, 4)),
-    ])
-
-    num_subjects = len(subjects)
-    print(f"{ctime}: get total number of {num_subjects} subjects")
-    num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
-
-    training_subjects = subjects[:num_training_subjects]
-    validation_subjects = subjects[num_training_subjects:]
-
-    training_set = torchio.ImagesDataset(
-        training_subjects, transform=training_transform)
-
-    validation_set = torchio.ImagesDataset(
-        validation_subjects, transform=validation_transform)
-
-    print('Training set:', len(training_set), 'subjects')
-    print('Validation set:', len(validation_set), 'subjects')
 
     training_batch_size = 2
     validation_batch_size = 1
