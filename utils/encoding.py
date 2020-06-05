@@ -107,7 +107,7 @@ class EncodingBlock(nn.Module):
             padding_mode=padding_mode,
             activation=activation,
             dilation=dilation,
-            dropout=dropout,
+            dropout=0,
         )
 
         out_channels_second = out_channels_first
