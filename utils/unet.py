@@ -73,7 +73,7 @@ class UNet(nn.Module):
             padding=padding,
             padding_mode=padding_mode,
             activation=activation,
-            # initial_dilation=self.encoder.dilation,
+            initial_dilation=self.encoder.dilation,
             dropout=dropout,
         )
 

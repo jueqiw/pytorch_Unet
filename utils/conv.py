@@ -51,7 +51,6 @@ class ConvolutionalBlock(nn.Module):
         if activation is not None:
             activation_layer = getattr(nn, activation)()
 
-
         # if preactivation:
         #     self.add_if_not_none(block, norm_layer)
         #     self.add_if_not_none(block, activation_layer)
