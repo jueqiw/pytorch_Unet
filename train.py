@@ -32,7 +32,6 @@ from time import ctime
 from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
 from torchvision.transforms import Resize
-from torchsummary import summary
 
 # those words used when building the dataset subject
 img = "img"
@@ -189,7 +188,7 @@ if __name__ == "__main__":
         num_workers=multiprocessing.cpu_count(),
         # num_workers=0,
     )
-
+    #
     # one_batch = next(iter(training_loader))
     #
     # k = 4
@@ -200,8 +199,7 @@ if __name__ == "__main__":
     # save_image(slices, image_path, nrow=training_batch_size // 2, normalize=True, scale_each=True)
 
     model, optimizer = get_model_and_optimizer(device)
-
-    # summary(model, (2, 4, 37, 37))
+    # print(model)
 
     weights_stem = 'whole_images'
     train(num_epochs, training_loader, validation_loader, model, optimizer, weights_stem)
