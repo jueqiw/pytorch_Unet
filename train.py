@@ -1,6 +1,6 @@
 import torch
 from torchio import AFFINE, DATA, PATH, TYPE, STEM
-from data.get_dataset import get_dataset
+# from data.get_dataset import get_dataset
 import warnings
 from torchio.transforms import (
     RandomFlip,
@@ -23,7 +23,7 @@ from torchio.transforms import (
 import torchio
 import numpy as np
 from utils.unet import UNet, UNet3D
-from data.const import *
+# from data.const import *
 import enum
 import SimpleITK as sitk
 import multiprocessing
@@ -199,6 +199,7 @@ if __name__ == "__main__":
     save_image(slices, image_path, nrow=training_batch_size // 2, normalize=True, scale_each=True)
 
     model, optimizer = get_model_and_optimizer(device)
+
 
     weights_stem = 'whole_images'
     train(num_epochs, training_loader, validation_loader, model, optimizer, weights_stem)

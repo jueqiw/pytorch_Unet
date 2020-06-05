@@ -114,7 +114,7 @@ class UNet(nn.Module):
         if dimensions == 2:
             in_channels = out_channels_first_layer
         elif dimensions == 3:
-            in_channels = 2 * out_channels_first_layer
+            in_channels = out_channels_first_layer
         self.classifier = ConvolutionalBlock(
             dimensions, in_channels, out_classes,
             kernel_size=1, activation=None,

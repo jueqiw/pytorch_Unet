@@ -21,11 +21,11 @@ class ConvolutionalBlock(nn.Module):
         super().__init__()
 
         block = nn.ModuleList()
-
-        dilation = 1 if dilation is None else dilation
-        if padding:
-            total_padding = kernel_size + 2 * (dilation - 1) - 1
-            padding = total_padding // 2
+        #
+        # dilation = 1 if dilation is None else dilation
+        # if padding:
+        #     total_padding = kernel_size + 2 * (dilation - 1) - 1
+        #     padding = total_padding // 2
 
         class_name = 'Conv{}d'.format(dimensions)
         conv_class = getattr(nn, class_name)
@@ -33,7 +33,7 @@ class ConvolutionalBlock(nn.Module):
             in_channels,
             out_channels,
             kernel_size,
-            padding=padding,
+            # padding=padding,
             padding_mode=padding_mode,
             dilation=dilation,
         )
