@@ -124,7 +124,7 @@ class UNet(nn.Module):
 
     def forward(self, x):
         skip_connections, encoding = self.encoder(x)
-        encoding = self.bottom_block(encoding)
+        # encoding = self.bottom_block(encoding)
         x = self.decoder(skip_connections, encoding)
         if self.monte_carlo_layer is not None:
             x = self.monte_carlo_layer(x)
