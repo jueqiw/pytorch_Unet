@@ -65,8 +65,8 @@ class UNet(nn.Module):
         self.decoder = Decoder(  # 3 decoder level
             in_channels_skip_connection,
             dimensions,
-            upsampling_type,
-            num_decoding_blocks,
+            upsampling_type="conv",
+            num_decoding_blocks=num_decoding_blocks,
             # normalization=normalization,
             # preactivation=preactivation,
             residual=residual,
