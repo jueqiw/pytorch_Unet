@@ -26,6 +26,7 @@ import os
 img = "img"
 label = "label"
 dir_checkpoint = 'checkpoints/'
+min_loss = float("inf")
 
 
 class Action(enum.Enum):
@@ -81,9 +82,11 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
                 batch_loss.backward()
                 optimizer.step()
             epoch_losses.append(batch_loss.item())
-        print(f'Epoch:  {epoch_idx} | train lose')
+        print(f'Epoch: {epoch_idx} | {action.value} lose: {batch_loss}')
     epoch_losses = np.array(epoch_losses)
     print(f'{action.value} mean loss: {epoch_losses.mean():0.3f}')
+    if action.value == Action.VALIDATE and epoch_losses < min_loss:
+        min_loss = epoch_losses
 
 
 def train(num_epochs, training_loader, validation_loader, model, optimizer):
@@ -92,7 +95,6 @@ def train(num_epochs, training_loader, validation_loader, model, optimizer):
         print('Starting epoch', epoch_idx)
         run_epoch(epoch_idx, Action.TRAIN, training_loader, model, optimizer)
         run_epoch(epoch_idx, Action.VALIDATE, validation_loader, model, optimizer)
-        torch.save(model.state_dict(), f'epoch_{epoch_idx}.pth')
 
 
 if __name__ == "__main__":
@@ -146,7 +148,7 @@ if __name__ == "__main__":
             model=model,
             optimizer=optimizer)
     except KeyboardInterrupt:
-        torch.save(model.state_dict(), 'INTERRUPTED.pth')
+        torch.save(model.state_dict(), './checkpoint/INTERRUPTED.pth')
         logging.info('Saved interrupt')
         try:
             sys.exit(0)

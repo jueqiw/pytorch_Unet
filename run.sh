@@ -28,7 +28,6 @@ cd work
 
 EPOCHS=10000
 
-
 # run script
 echo -e '\n\n\n'
 echo "$(date +"%T"):  Executing torch_test.py"
