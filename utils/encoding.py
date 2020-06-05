@@ -11,9 +11,9 @@ class Encoder(nn.Module):
             dimensions: int,
             pooling_type: str,
             num_encoding_blocks: int,
-            normalization: Optional[str],
-            preactivation: bool = False,
-            residual: bool = False,
+            # normalization: Optional[str],
+            # preactivation: bool = False,
+            # residual: bool = False,
             padding: int = 0,
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
@@ -30,11 +30,11 @@ class Encoder(nn.Module):
                 in_channels,
                 out_channels_first,
                 dimensions,
-                normalization,
+                # normalization,
                 pooling_type,
-                preactivation,
+                # preactivation,
                 is_first_block=is_first_block,
-                residual=residual,
+                # residual=residual,
                 padding=padding,
                 padding_mode=padding_mode,
                 activation=activation,
@@ -49,8 +49,9 @@ class Encoder(nn.Module):
             elif dimensions == 3:
                 in_channels = 2 * out_channels_first
                 out_channels_first = in_channels
-            if self.dilation is not None:
-                self.dilation *= 2
+            # dilation is always None
+            # if self.dilation is not None:
+            #     self.dilation *= 2
 
     def forward(self, x):
         skip_connections = []
@@ -70,37 +71,38 @@ class EncodingBlock(nn.Module):
             in_channels: int,
             out_channels_first: int,
             dimensions: int,
-            normalization: Optional[str],
+            # normalization: Optional[str],
             pooling_type: Optional[str],
-            preactivation: bool = False,
+            # preactivation: bool = False,
             is_first_block: bool = False,
-            residual: bool = False,
+            # residual: bool = False,
             padding: int = 0,
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
             dilation: Optional[int] = None,
-            dropout: float = 0,
+            dropout: float = 0.3,
             ):
         super().__init__()
 
-        self.preactivation = preactivation
-        self.normalization = normalization
+        # self.preactivation = preactivation
+        # self.normalization = normalization
 
-        self.residual = residual
+        # self.residual = residual
 
         if is_first_block:
             normalization = None
             preactivation = None
         else:
-            normalization = self.normalization
+            # normalization = self.normalization
+            normalization = None
             preactivation = self.preactivation
 
         self.conv1 = ConvolutionalBlock(
             dimensions,
             in_channels,
             out_channels_first,
-            normalization=normalization,
-            preactivation=preactivation,
+            # normalization=normalization,
+            # preactivation=preactivation,
             padding=padding,
             padding_mode=padding_mode,
             activation=activation,
@@ -108,51 +110,57 @@ class EncodingBlock(nn.Module):
             dropout=dropout,
         )
 
+        out_channels_second = out_channels_first
         if dimensions == 2:
             out_channels_second = out_channels_first
         elif dimensions == 3:
-            out_channels_second = 2 * out_channels_first
+            # out_channels_second = 2 * out_channels_first
+            out_channels_second = out_channels_first
+
         self.conv2 = ConvolutionalBlock(
             dimensions,
             out_channels_first,
             out_channels_second,
-            normalization=self.normalization,
-            preactivation=self.preactivation,
+            # normalization=self.normalization,
+            # preactivation=self.preactivation,
             padding=padding,
             activation=activation,
             dilation=dilation,
             dropout=dropout,
         )
 
-        if residual:
-            self.conv_residual = ConvolutionalBlock(
-                dimensions,
-                in_channels,
-                out_channels_second,
-                kernel_size=1,
-                normalization=None,
-                activation=None,
-            )
+        # self.maxpool3d = nn.MaxPool3d(2, stride=2)
+
+        # if residual:
+        #     self.conv_residual = ConvolutionalBlock(
+        #         dimensions,
+        #         in_channels,
+        #         out_channels_second,
+        #         kernel_size=1,
+        #         normalization=None,
+        #         activation=None,
+        #     )
 
         self.downsample = None
         if pooling_type is not None:
             self.downsample = get_downsampling_layer(dimensions, pooling_type)
 
     def forward(self, x):
-        if self.residual:
-            connection = self.conv_residual(x)
-            x = self.conv1(x)
-            x = self.conv2(x)
-            x += connection
-        else:
-            x = self.conv1(x)
-            x = self.conv2(x)
-        if self.downsample is None:
-            return x
-        else:
-            skip_connection = x
-            x = self.downsample(x)
-            return x, skip_connection
+        # if self.residual:
+        #     connection = self.conv_residual(x)
+        #     x = self.conv1(x)
+        #     x = self.conv2(x)
+        #     x += connection
+        # else:
+        x = self.conv1(x)
+        x = self.conv2(x)
+
+        # if self.downsample is None:
+        #     return x
+        # else:
+        skip_connection = x
+        x = self.downsample(x)
+        return x, skip_connection
 
     @property
     def out_channels(self):
@@ -163,6 +171,7 @@ def get_downsampling_layer(
         dimensions: int,
         pooling_type: str,
         kernel_size: int = 2,
+        stride: int = 2,
         ) -> nn.Module:
     class_name = '{}Pool{}d'.format(pooling_type.capitalize(), dimensions)
     class_ = getattr(nn, class_name)

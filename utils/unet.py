@@ -28,7 +28,7 @@ class UNet(nn.Module):
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
             initial_dilation: Optional[int] = None,
-            dropout: float = 0,
+            dropout: float = 0.3,
             monte_carlo_dropout: float = 0,
             ):
         super().__init__()
@@ -38,16 +38,16 @@ class UNet(nn.Module):
         if residual:
             padding = 1
 
-        # Encoder
+        # Encoder Conv3D *2
         self.encoder = Encoder(
             in_channels,
             out_channels_first_layer,
             dimensions,
             pooling_type,
             depth,
-            normalization,
-            preactivation=preactivation,
-            residual=residual,
+            # normalization,
+            # preactivation=preactivation,
+            # residual=residual,
             padding=padding,
             padding_mode=padding_mode,
             activation=activation,
@@ -60,20 +60,21 @@ class UNet(nn.Module):
         if dimensions == 2:
             out_channels_first = 2 * in_channels
         else:
-            out_channels_first = in_channels
+            # out_channels_first = in_channels
+            out_channels_first = 2 * in_channels
 
         self.bottom_block = EncodingBlock(
             in_channels,
             out_channels_first,
             dimensions,
             normalization,
-            pooling_type=None,
-            preactivation=preactivation,
-            residual=residual,
+            # pooling_type=None,
+            # preactivation=preactivation,
+            # residual=residual,
             padding=padding,
             padding_mode=padding_mode,
             activation=activation,
-            dilation=self.encoder.dilation,
+            # dilation=self.encoder.dilation,
             dropout=dropout,
         )
 
@@ -82,29 +83,32 @@ class UNet(nn.Module):
             power = depth - 1
         elif dimensions == 3:
             power = depth
-        in_channels = self.bottom_block.out_channels
-        in_channels_skip_connection = out_channels_first_layer * 2 ** power
-        num_decoding_blocks = depth
-        self.decoder = Decoder(
+
+        in_channels = self.bottom_block.out_channels  # 32
+        print("last level in_channels:", in_channels)
+        in_channels_skip_connection = out_channels_first_layer  # 32
+
+        num_decoding_blocks = depth  # 3
+        self.decoder = Decoder(  # 3 decoder level
             in_channels_skip_connection,
             dimensions,
             upsampling_type,
             num_decoding_blocks,
-            normalization=normalization,
-            preactivation=preactivation,
+            # normalization=normalization,
+            # preactivation=preactivation,
             residual=residual,
             padding=padding,
             padding_mode=padding_mode,
             activation=activation,
-            initial_dilation=self.encoder.dilation,
+            # initial_dilation=self.encoder.dilation,
             dropout=dropout,
         )
 
         # Monte Carlo dropout
-        self.monte_carlo_layer = None
-        if monte_carlo_dropout:
-            dropout_class = getattr(nn, 'Dropout{}d'.format(dimensions))
-            self.monte_carlo_layer = dropout_class(p=monte_carlo_dropout)
+        # self.monte_carlo_layer = None
+        # if monte_carlo_dropout:
+        #     dropout_class = getattr(nn, 'Dropout{}d'.format(dimensions))
+        #     self.monte_carlo_layer = dropout_class(p=monte_carlo_dropout)
 
         # Classifier
         if dimensions == 2:
@@ -140,7 +144,7 @@ class UNet3D(UNet):
         kwargs = {}
         kwargs['dimensions'] = 3
         kwargs['num_encoding_blocks'] = 3  # 4
-        kwargs['out_channels_first_layer'] = 16
+        kwargs['out_channels_first_layer'] = 8
         kwargs['normalization'] = 'batch'
         kwargs.update(user_kwargs)
         super().__init__(*args, **kwargs)

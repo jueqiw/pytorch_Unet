@@ -8,15 +8,16 @@ class ConvolutionalBlock(nn.Module):
             self,
             dimensions: int,
             in_channels: int,
-            out_channels: int,
-            normalization: Optional[str] = None,
+            out_channels: int,  # 8
+            # normalization: Optional[str] = None,
             kernel_size: int = 5,
             activation: Optional[str] = 'ReLU',
-            preactivation: bool = False,
+            # preactivation: bool = False,
             padding: int = 0,
             padding_mode: str = 'zeros',
             dilation: Optional[int] = None,
-            dropout: float = 0,
+            dropout: float = 0.3,
+            max_pool: bool = True,
             ):
         super().__init__()
 
@@ -38,26 +39,27 @@ class ConvolutionalBlock(nn.Module):
             dilation=dilation,
         )
 
-        norm_layer = None
-        if normalization is not None:
-            class_name = '{}Norm{}d'.format(
-                normalization.capitalize(), dimensions)
-            norm_class = getattr(nn, class_name)
-            num_features = in_channels if preactivation else out_channels
-            norm_layer = norm_class(num_features)
+        # norm_layer = None
+        # if normalization is not None:  # make it always none, only use dropout
+        #     class_name = '{}Norm{}d'.format(
+        #         normalization.capitalize(), dimensions)
+        #     norm_class = getattr(nn, class_name)
+        #     num_features = in_channels if preactivation else out_channels
+        #     norm_layer = norm_class(num_features)
 
         activation_layer = None
         if activation is not None:
             activation_layer = getattr(nn, activation)()
 
-        if preactivation:
-            self.add_if_not_none(block, norm_layer)
-            self.add_if_not_none(block, activation_layer)
-            self.add_if_not_none(block, conv_layer)
-        else:
-            self.add_if_not_none(block, conv_layer)
-            self.add_if_not_none(block, norm_layer)
-            self.add_if_not_none(block, activation_layer)
+
+        # if preactivation:
+        #     self.add_if_not_none(block, norm_layer)
+        #     self.add_if_not_none(block, activation_layer)
+        #     self.add_if_not_none(block, conv_layer)
+        # else:
+        self.add_if_not_none(block, conv_layer)
+        # self.add_if_not_none(block, norm_layer)
+        self.add_if_not_none(block, activation_layer)
 
         dropout_layer = None
         if dropout:
@@ -66,9 +68,17 @@ class ConvolutionalBlock(nn.Module):
             dropout_layer = dropout_class(p=dropout)
             self.add_if_not_none(block, dropout_layer)
 
+        maxpool_layer = None
+        if max_pool:
+            class_name = 'MaxPool3d{}d'.format(dimensions)
+            maxpool_class = getattr(nn, class_name)
+            maxpool_layer = maxpool_class(2, stride=2)
+            self.add_if_not_none(block, maxpool_layer)
+
         self.conv_layer = conv_layer
-        self.norm_layer = norm_layer
+        # self.norm_layer = norm_layer
         self.activation_layer = activation_layer
+        self.maxpool_layer = maxpool_layer
         self.dropout_layer = dropout_layer
 
         self.block = nn.Sequential(*block)
