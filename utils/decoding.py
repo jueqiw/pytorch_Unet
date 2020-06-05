@@ -148,7 +148,7 @@ class DecodingBlock(nn.Module):
         # # Then pad will be (-2, -2, -3, -3, -9, -9)
         # pad = -torch.stack((half_crop, half_crop)).t().flatten()
         # skip_connection = F.pad(skip_connection, pad.tolist())
-        return skip_connection
+        return bypass
 
 
 def get_upsampling_layer(upsampling_type: str) -> nn.Upsample:
