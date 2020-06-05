@@ -51,6 +51,7 @@ def get_subjects(datasets):
     #     )
     #     for img, label in get_img(mri_list)
     #     ]
+
     subjects = [
         tio.Subject(
             img=tio.Image(path=mri.img_path, label=tio.INTENSITY),  # image to be segmented
