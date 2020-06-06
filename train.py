@@ -110,7 +110,7 @@ if __name__ == "__main__":
     SPATIAL_DIMENSIONS = 2, 3, 4
 
     training_batch_size = args.batchsize
-    validation_batch_size = 1
+    validation_batch_size = args.batchsize
     num_epochs = 500
 
     # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]

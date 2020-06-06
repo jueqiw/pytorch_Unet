@@ -27,6 +27,7 @@ cd work
 #tar -cf ~/projects/def-foo/johndoe/results.tar work
 
 EPOCHS=500
+BATCH_SIZE=4
 
 # run script
 echo -e '\n\n\n'
@@ -34,4 +35,5 @@ echo "$(date +"%T"):  Executing train.py"
 python3 /home/jueqi/projects/def-jlevman/jueqi/pytorch_Unet/train.py \
        --data_dir="$SLURM_TMPDIR" \
        --epochs="$EPOCHS" \
+       --batch-size=$BATCH_SIZE \
        && echo "$(date +"%T"):  Successfully executed train.py"
