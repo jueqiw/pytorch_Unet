@@ -23,7 +23,7 @@ class Encoder(nn.Module):
         super().__init__()
 
         self.encoding_blocks = nn.ModuleList()
-        self.dilation = initial_dilation
+        # self.dilation = initial_dilation
         is_first_block = True
         for _ in range(num_encoding_blocks):  # 3
             encoding_block = EncodingBlock(
@@ -38,7 +38,7 @@ class Encoder(nn.Module):
                 padding=padding,
                 padding_mode=padding_mode,
                 activation=activation,
-                dilation=self.dilation,
+                # dilation=self.dilation,
                 dropout=dropout,
             )
             is_first_block = False

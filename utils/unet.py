@@ -48,7 +48,7 @@ class UNet(nn.Module):
             # normalization,
             # preactivation=preactivation,
             # residual=residual,
-            padding=padding,
+            padding=32,
             padding_mode=padding_mode,
             activation=activation,
             initial_dilation=initial_dilation,
@@ -70,10 +70,10 @@ class UNet(nn.Module):
             # normalization=normalization,
             # preactivation=preactivation,
             residual=residual,
-            padding=padding,
+            padding=32,
             padding_mode=padding_mode,
             activation=activation,
-            initial_dilation=self.encoder.dilation,
+            # initial_dilation=self.encoder.dilation,
             dropout=dropout,
         )
 
