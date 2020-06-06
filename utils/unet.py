@@ -91,6 +91,7 @@ class UNet(nn.Module):
         self.classifier = ConvolutionalBlock(
             dimensions, in_channels, out_classes,
             kernel_size=1, activation=None,
+            dropout=0
             # activation="Sigmoid"
         )
 
@@ -98,8 +99,8 @@ class UNet(nn.Module):
         skip_connections, encoding = self.encoder(x)
         # encoding = self.bottom_block(encoding)
         x = self.decoder(skip_connections, encoding)
-        if self.monte_carlo_layer is not None:
-            x = self.monte_carlo_layer(x)
+        # if self.monte_carlo_layer is not None:
+        #     x = self.monte_carlo_layer(x)
         return self.classifier(x)
 
 

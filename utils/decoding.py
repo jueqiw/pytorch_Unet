@@ -142,8 +142,8 @@ class DecodingBlock(nn.Module):
         skip_connection = self.center_crop(skip_connection, x)  # Got 35 and 34
         # skip_connection = x
         x = torch.cat((skip_connection, x), dim=CHANNELS_DIMENSION)
-        print(f"skip connection: {skip_connection.shape}")
-        print(f"x: {x.shape}")
+        # print(f"skip connection: {skip_connection.shape}")
+        # print(f"x: {x.shape}")
         x = self.conv1(x)
         return x
 
@@ -174,7 +174,6 @@ def get_upsampling_layer(upsampling_type: str) -> nn.Upsample:
 
 
 def get_conv_transpose_layer(dimensions, in_channels, out_channels):
-    print(in_channels, out_channels)
     class_name = 'ConvTranspose{}d'.format(dimensions)
     conv_class = getattr(nn, class_name)
     conv_layer = conv_class(in_channels, out_channels, kernel_size=5, stride=1, padding=2)
