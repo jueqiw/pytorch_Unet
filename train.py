@@ -38,9 +38,6 @@ class Action(enum.Enum):
 def prepare_batch(batch, device):
     inputs = batch[img][DATA].to(device)
     foreground = batch[label][DATA].to(device)
-    # foreground[foreground > 0.5] = 1
-    # background = 1 - foreground
-    # targets = torch.cat((background, foreground), dim=CHANNELS_DIMENSION)
     targets = torch.zeros_like(foreground).to(device)
     targets[foreground > 0.5] = 1
     return inputs, targets
@@ -56,13 +53,13 @@ def forward(model, inputs):
 def get_model_and_optimizer(device):
     model = UNet(
         in_channels=1,
-        out_classes=2,
+        out_classes=1,
         dimensions=3,
         num_encoding_blocks=3,
         out_channels_first_layer=8,
         # normalization='batch',
-        upsampling_type='linear',
-        padding=True,
+        upsampling_type='conv',
+        padding=2,
         activation='PReLU',
     ).to(device)
     optimizer = torch.optim.AdamW(model.parameters())
@@ -80,8 +77,8 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
         with torch.set_grad_enabled(is_training):
             logits = forward(model, inputs)
             probabilities = F.softmax(logits, dim=CHANNELS_DIMENSION)
-            batch_losses = criterion(probabilities, targets)
-            batch_loss = batch_losses.mean()
+            batch_loss = criterion(probabilities, targets)
+            # batch_loss = batch_losses.mean()
             if is_training:
                 batch_loss.backward()
                 optimizer.step()
