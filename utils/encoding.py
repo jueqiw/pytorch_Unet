@@ -160,7 +160,7 @@ class EncodingBlock(nn.Module):
         else:
             skip_connection = x
             x = self.downsample(x)
-            print(x.shape)
+            # print(x.shape)
         return x, skip_connection
 
     @property
