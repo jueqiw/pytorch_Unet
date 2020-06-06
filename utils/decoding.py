@@ -131,7 +131,7 @@ class DecodingBlock(nn.Module):
 
     def forward(self, skip_connection, x):
         x = self.upsample(x)  # upConvLayer
-        skip_connection = self.center_crop(skip_connection, x)
+        # skip_connection = self.center_crop(skip_connection, x)
         # skip_connection = x
         x = torch.cat((skip_connection, x), dim=CHANNELS_DIMENSION)
         x = self.conv1(x)
