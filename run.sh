@@ -26,7 +26,7 @@ cd work
 ## The computations are done, so clean up the data set...
 #tar -cf ~/projects/def-foo/johndoe/results.tar work
 
-EPOCHS=10000
+EPOCHS=500
 
 # run script
 echo -e '\n\n\n'
