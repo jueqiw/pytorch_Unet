@@ -11,10 +11,10 @@ def matrix(prob, target):
     _and = (pred & mask_bool).float().sum((1, 2, 3, 4))
     _or = (pred | mask_bool).float().sum((1, 2, 3, 4))
 
-    iou = (_and + SMOOTH) / (_or + SMOOTH)
+    iou = ((_and + SMOOTH) / (_or + SMOOTH)).sum()
 
     pred_sum = pred.float().sum((1, 2, 3, 4))
     mask_bool_sum = mask_bool.float().sum((1, 2, 3, 4))
 
-    dice = ((2 * _and) / (pred_sum + mask_bool_sum))
+    dice = ((2 * _and) / (pred_sum + mask_bool_sum)).sum()
     return iou, dice

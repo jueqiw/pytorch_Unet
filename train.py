@@ -28,7 +28,7 @@ import os
 img = "img"
 label = "label"
 dir_checkpoint = 'checkpoints/'
-min_loss = float("inf")
+min_loss = 1000
 
 
 class Action(enum.Enum):
