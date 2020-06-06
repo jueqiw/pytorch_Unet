@@ -1,5 +1,6 @@
 import torch
 
+
 def matrix(prob, target):
     SMOOTH = 1e-6
     device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'

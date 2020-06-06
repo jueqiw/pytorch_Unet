@@ -15,7 +15,7 @@ import nibabel as nib
 from time import ctime
 from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
-from torch.nn import MultiLabelSoftMarginLoss
+from torch.nn import CrossEntropyLoss
 from torchvision.transforms import Resize
 from utils.matrixes import matrix
 import argparse
@@ -70,7 +70,7 @@ def get_model_and_optimizer(device):
 def run_epoch(epoch_idx, action, loader, model, optimizer):
     is_training = action == Action.TRAIN
     epoch_losses = []
-    criterion = MultiLabelSoftMarginLoss()
+    loss_fn = CrossEntropyLoss(reduction='mean')
     model.train(is_training)
     ious = 0
     dices = 0
@@ -85,7 +85,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
             iou, dice = matrix(probabilities, targets)
             ious += iou
             dices += dice
-            batch_loss = criterion(logits, targets)
+            batch_loss = loss_fn(logits, targets.long())
             # batch_loss = batch_losses.mean()
             if is_training:
                 batch_loss.backward()
