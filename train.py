@@ -38,7 +38,7 @@ class Action(enum.Enum):
 
 def prepare_batch(batch, device):
     inputs = batch[img][DATA].to(device)
-    foreground = batch[label][DATA].to(device)
+    foreground = batch[label][DATA].to(device).squeeze()
     targets = torch.zeros_like(foreground).to(device)
     targets[foreground > 0.5] = 1
     return inputs, targets
@@ -82,10 +82,10 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
         with torch.set_grad_enabled(is_training):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
+            batch_loss = loss_fn(logits, targets.long())
             iou, dice = matrix(probabilities, targets)
             ious += iou
             dices += dice
-            batch_loss = loss_fn(logits, targets.long())
             # batch_loss = batch_losses.mean()
             if is_training:
                 batch_loss.backward()
