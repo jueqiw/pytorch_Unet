@@ -89,7 +89,7 @@ class UNet(nn.Module):
         elif dimensions == 3:
             in_channels = out_channels_first_layer
         self.classifier = ConvolutionalBlock(
-            dimensions, in_channels, out_classes,
+            dimensions, in_channels, out_channels=1,
             kernel_size=1, activation=None,
             dropout=0,
             # activation="Sigmoid"
