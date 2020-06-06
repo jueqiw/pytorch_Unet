@@ -17,7 +17,7 @@ class Encoder(nn.Module):
             padding: int = 0,
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
-            initial_dilation: Optional[int] = None,
+            # initial_dilation: Optional[int] = None,
             dropout: float = 0.3,
             ):
         super().__init__()
@@ -80,7 +80,7 @@ class EncodingBlock(nn.Module):
             padding: int = 0,
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
-            dilation: Optional[int] = None,
+            # dilation: Optional[int] = None,
             dropout: float = 0.3,
             ):
         super().__init__()
@@ -107,7 +107,7 @@ class EncodingBlock(nn.Module):
             padding=padding,
             padding_mode=padding_mode,
             activation=activation,
-            dilation=dilation,
+            # dilation=dilation,
             dropout=0,
         )
 
@@ -126,7 +126,7 @@ class EncodingBlock(nn.Module):
             # preactivation=self.preactivation,
             padding=padding,
             activation=activation,
-            dilation=dilation,
+            # dilation=dilation,
             dropout=dropout,
         )
 

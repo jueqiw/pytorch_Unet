@@ -51,7 +51,7 @@ class UNet(nn.Module):
             padding=32,
             padding_mode=padding_mode,
             activation=activation,
-            initial_dilation=initial_dilation,
+            # initial_dilation=initial_dilation,
             dropout=dropout,
         )
 

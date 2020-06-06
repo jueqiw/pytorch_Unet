@@ -29,7 +29,7 @@ class Decoder(nn.Module):
             padding: int = 0,
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
-            initial_dilation: Optional[int] = None,
+            # initial_dilation: Optional[int] = None,
             dropout: float = 0.3,
             ):
         super().__init__()
@@ -50,8 +50,8 @@ class Decoder(nn.Module):
             self.decoding_blocks.append(decoding_block)
             # print(in_channels_skip_connection)
             in_channels_skip_connection //= 2
-            if self.dilation is not None:
-                self.dilation //= 2
+            # if self.dilation is not None:
+            #     self.dilation //= 2
 
     def forward(self, skip_connections, x):
         zipped = zip(reversed(skip_connections), self.decoding_blocks)
@@ -72,7 +72,7 @@ class DecodingBlock(nn.Module):
             padding: int = 0,
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
-            dilation: Optional[int] = None,
+            # dilation: Optional[int] = None,
             dropout: float = 0,
             ):
         super().__init__()
@@ -100,7 +100,7 @@ class DecodingBlock(nn.Module):
             padding=padding,
             padding_mode=padding_mode,
             activation=activation,
-            dilation=dilation,
+            # dilation=dilation,
             dropout=dropout,
             max_pooling=False
         )
