@@ -168,7 +168,7 @@ def get_upsampling_layer(upsampling_type: str) -> nn.Upsample:
 def get_conv_transpose_layer(dimensions, in_channels, out_channels):
     class_name = 'ConvTranspose{}d'.format(dimensions)
     conv_class = getattr(nn, class_name)
-    conv_layer = conv_class(in_channels, out_channels, kernel_size=5, stride=2, padding=32)
+    conv_layer = conv_class(in_channels, out_channels, kernel_size=5, stride=1, padding=2)
     return conv_layer
 
 
