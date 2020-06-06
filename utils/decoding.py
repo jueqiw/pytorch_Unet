@@ -36,6 +36,7 @@ class Decoder(nn.Module):
         upsampling_type = fix_upsampling_type(upsampling_type, dimensions)
         self.decoding_blocks = nn.ModuleList()
         # self.dilation = initial_dilation
+        first_decoding_block = True
         for _ in range(num_decoding_blocks):  # 3
             decoding_block = DecodingBlock(
                 in_channels_skip_connection,
@@ -46,10 +47,12 @@ class Decoder(nn.Module):
                 activation=activation,
                 # dilation=self.dilation,
                 dropout=dropout,
+                first_decoder_block=first_decoding_block
             )
             self.decoding_blocks.append(decoding_block)
             # print(in_channels_skip_connection)
             in_channels_skip_connection //= 2
+            first_decoding_block = False
             # if self.dilation is not None:
             #     self.dilation //= 2
 
@@ -74,6 +77,7 @@ class DecodingBlock(nn.Module):
             activation: Optional[str] = 'ReLU',
             # dilation: Optional[int] = None,
             dropout: float = 0,
+            first_decoder_block: bool = True,
             ):
         super().__init__()
 
@@ -82,7 +86,11 @@ class DecodingBlock(nn.Module):
         if upsampling_type == 'conv':
             # in_channels = out_channels = 2 * in_channels_skip_connection
             # print("in channels skip connection:", in_channels_skip_connection)
-            in_channels = out_channels = in_channels_skip_connection
+            if first_decoder_block:
+                in_channels = out_channels = in_channels_skip_connection
+            else:
+                in_channels = in_channels_skip_connection * 2
+                out_channels = in_channels_skip_connection
             self.upsample = get_conv_transpose_layer(
                 dimensions, in_channels, out_channels)
         else:
@@ -166,6 +174,7 @@ def get_upsampling_layer(upsampling_type: str) -> nn.Upsample:
 
 
 def get_conv_transpose_layer(dimensions, in_channels, out_channels):
+    print(in_channels, out_channels)
     class_name = 'ConvTranspose{}d'.format(dimensions)
     conv_class = getattr(nn, class_name)
     conv_layer = conv_class(in_channels, out_channels, kernel_size=5, stride=1, padding=2)
