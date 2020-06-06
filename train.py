@@ -17,6 +17,7 @@ from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
 from torch.nn import MultiLabelSoftMarginLoss
 from torchvision.transforms import Resize
+from utils.matrixes import matrix
 import argparse
 import logging
 import sys
@@ -76,19 +77,20 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
         optimizer.zero_grad()
         with torch.set_grad_enabled(is_training):
             logits = forward(model, inputs)
-            probabilities = F.softmax(logits, dim=CHANNELS_DIMENSION)
-            batch_loss = criterion(probabilities, targets)
+            probabilities = F.sigmoid(logits)
+            iou, dice = matrix(probabilities, targets)
+            batch_loss = criterion(logits, targets)
             # batch_loss = batch_losses.mean()
             if is_training:
                 batch_loss.backward()
                 optimizer.step()
             epoch_losses.append(batch_loss.item())
     epoch_losses = np.array(epoch_losses)
-    print(f'Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.3f}')
+    print(f'{ctime}: Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.3f}')
     if action.value == Action.VALIDATE and epoch_losses < min_loss:
         min_loss = epoch_losses
         torch.save(model.state_dict(), f'Epoch_{epoch_idx}_loss_{min_loss}.pth')
-        logging.info('Saved interrupt')
+        logging.info(f'{ctime} :Saved interrupt')
 
 
 def train(num_epochs, training_loader, validation_loader, model, optimizer):
