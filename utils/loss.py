@@ -1,8 +1,11 @@
+import torch
+
 CHANNELS_DIMENSION = 1
 SPATIAL_DIMENSIONS = 2, 3, 4
 
 
 def get_dice_score(output, target, epsilon=1e-9):
+    output = torch.nn.Sigmoid(output)
     p0 = output
     g0 = target
     p1 = 1 - p0

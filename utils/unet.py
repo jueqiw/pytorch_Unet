@@ -91,7 +91,7 @@ class UNet(nn.Module):
         self.classifier = ConvolutionalBlock(
             dimensions, in_channels, out_classes,
             kernel_size=1, activation=None,
-            dropout=0
+            dropout=0,
             # activation="Sigmoid"
         )
 
