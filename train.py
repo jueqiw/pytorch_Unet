@@ -15,6 +15,7 @@ import nibabel as nib
 from time import ctime
 from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
+from torch.nn import MultiLabelSoftMarginLoss
 from torchvision.transforms import Resize
 import argparse
 import logging
@@ -71,6 +72,7 @@ def get_model_and_optimizer(device):
 def run_epoch(epoch_idx, action, loader, model, optimizer):
     is_training = action == Action.TRAIN
     epoch_losses = []
+    criterion = MultiLabelSoftMarginLoss()
     model.train(is_training)
     for batch_idx, batch in enumerate(loader):
         inputs, targets = prepare_batch(batch, device)
@@ -78,15 +80,14 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
         with torch.set_grad_enabled(is_training):
             logits = forward(model, inputs)
             probabilities = F.softmax(logits, dim=CHANNELS_DIMENSION)
-            batch_losses = get_dice_loss(probabilities, targets)
+            batch_losses = criterion(probabilities, targets)
             batch_loss = batch_losses.mean()
             if is_training:
                 batch_loss.backward()
                 optimizer.step()
             epoch_losses.append(batch_loss.item())
-        print(f'Epoch: {epoch_idx} | {action.value} lose: {batch_loss}')
     epoch_losses = np.array(epoch_losses)
-    print(f'{action.value} mean loss: {epoch_losses.mean():0.3f}')
+    print(f'Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.3f}')
     if action.value == Action.VALIDATE and epoch_losses < min_loss:
         min_loss = epoch_losses
         torch.save(model.state_dict(), f'Epoch_{epoch_idx}_loss_{min_loss}.pth')
