@@ -138,9 +138,9 @@ class DecodingBlock(nn.Module):
         #     )
 
     def forward(self, skip_connection, x):
-        print("before upConv3D", x.shape)
+        # print("before upConv3D", x.shape)
         x = self.upsample(x)  # upConvLayer
-        print("after upConv3D", x.shape)
+        # print("after upConv3D", x.shape)
         # print(skip_connection.shape, x.shape)
         # skip_connection = self.center_crop(skip_connection, x)  # Got 35 and 34
         # print(skip_connection.shape, x.shape)
