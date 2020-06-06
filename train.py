@@ -37,9 +37,11 @@ class Action(enum.Enum):
 def prepare_batch(batch, device):
     inputs = batch[img][DATA].to(device)
     foreground = batch[label][DATA].to(device)
-    foreground[foreground > 0.5] = 1
-    background = 1 - foreground
-    targets = torch.cat((background, foreground), dim=CHANNELS_DIMENSION)
+    # foreground[foreground > 0.5] = 1
+    # background = 1 - foreground
+    # targets = torch.cat((background, foreground), dim=CHANNELS_DIMENSION)
+    targets = torch.zeros_like(foreground).to(device)
+    targets[foreground > 0.5] = 1
     return inputs, targets
 
 

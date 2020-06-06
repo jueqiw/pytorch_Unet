@@ -131,27 +131,11 @@ class EncodingBlock(nn.Module):
             dropout=dropout,
         )
 
-        # if residual:
-        #     self.conv_residual = ConvolutionalBlock(
-        #         dimensions,
-        #         in_channels,
-        #         out_channels_second,
-        #         kernel_size=1,
-        #         normalization=None,
-        #         activation=None,
-        #     )
-
         self.downsample = None
         if pooling_type is not None:
             self.downsample = get_downsampling_layer(dimensions, pooling_type)
 
     def forward(self, x):
-        # if self.residual:
-        #     connection = self.conv_residual(x)
-        #     x = self.conv1(x)
-        #     x = self.conv2(x)
-        #     x += connection
-        # else:
         x = self.conv1(x)
         x = self.conv2(x)
 
