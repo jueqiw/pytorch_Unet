@@ -72,13 +72,19 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
     epoch_losses = []
     criterion = MultiLabelSoftMarginLoss()
     model.train(is_training)
+    ious = 0
+    dices = 0
+    i = 0
     for batch_idx, batch in enumerate(loader):
+        i += 1
         inputs, targets = prepare_batch(batch, device)
         optimizer.zero_grad()
         with torch.set_grad_enabled(is_training):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
             iou, dice = matrix(probabilities, targets)
+            ious += iou
+            dices += dice
             batch_loss = criterion(logits, targets)
             # batch_loss = batch_losses.mean()
             if is_training:
@@ -86,11 +92,11 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
                 optimizer.step()
             epoch_losses.append(batch_loss.item())
     epoch_losses = np.array(epoch_losses)
-    print(f'{ctime}: Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.3f}')
+    print(f'{ctime()}: Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.3f} | iou: {ious / i:0.3f} | dices : {dices / i:0.3f}')
     if action.value == Action.VALIDATE and epoch_losses < min_loss:
         min_loss = epoch_losses
         torch.save(model.state_dict(), f'Epoch_{epoch_idx}_loss_{min_loss}.pth')
-        logging.info(f'{ctime} :Saved interrupt')
+        logging.info(f'{ctime()} :Saved interrupt')
 
 
 def train(num_epochs, training_loader, validation_loader, model, optimizer):

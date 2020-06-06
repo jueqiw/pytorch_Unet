@@ -49,7 +49,7 @@ def get_dataset(datasets):
     ])
 
     num_subjects = len(subjects)
-    print(f"{ctime}: get total number of {num_subjects} subjects")
+    # print(f"{ctime()}: get total number of {num_subjects} subjects")
     num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
 
     training_subjects = subjects[:num_training_subjects]
