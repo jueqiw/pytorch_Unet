@@ -111,10 +111,10 @@ if __name__ == "__main__":
 
     training_batch_size = args.batchsize
     validation_batch_size = 1
-    num_epochs = 1000
+    num_epochs = 500
 
     # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
-    datasets = [CC359_DATASET_DIR]
+    datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR]
     training_set, validation_set = get_dataset(datasets)
 
     training_loader = torch.utils.data.DataLoader(
