@@ -3,7 +3,7 @@ import torch
 def matrix(prob, target):
     SMOOTH = 1e-6
     device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
-    threshold = torch.ones(prob).to(device) * 0.5
+    threshold = torch.ones_like(prob).to(device) * 0.5
     # great than 0.5
     pred = torch.gt(prob, threshold)
     mask_bool = torch.gt(target.float(), threshold)
