@@ -138,17 +138,17 @@ class DecodingBlock(nn.Module):
         return x
 
     def center_crop(self, skip_connection, x):
-        # c = (skip_connection.size()[2] - x.size()[2]) // 2
-        # print(c)
-        # skip_connection = F.pad(skip_connection, [-c, -c, -c, -c])
-        skip_shape = torch.tensor(skip_connection.shape)
-        x_shape = torch.tensor(x.shape)
-        crop = skip_shape[2:] - x_shape[2:]
-        half_crop = crop // 2
-        # If skip_connection is 10, 20, 30 and x is (6, 14, 12)
-        # Then pad will be (-2, -2, -3, -3, -9, -9)
-        pad = -torch.stack((half_crop, half_crop)).t().flatten()
-        skip_connection = F.pad(skip_connection, pad.tolist())
+        c = (skip_connection.size()[2] - x.size()[2]) // 2
+        print(c)
+        skip_connection = F.pad(skip_connection, [-c, -c, -c, -c])
+        # skip_shape = torch.tensor(skip_connection.shape)
+        # x_shape = torch.tensor(x.shape)
+        # crop = skip_shape[2:] - x_shape[2:]
+        # half_crop = crop // 2
+        # # If skip_connection is 10, 20, 30 and x is (6, 14, 12)
+        # # Then pad will be (-2, -2, -3, -3, -9, -9)
+        # pad = -torch.stack((half_crop, half_crop)).t().flatten()
+        # skip_connection = F.pad(skip_connection, pad.tolist())
         return skip_connection
 
 

@@ -30,7 +30,7 @@ EPOCHS=10000
 
 # run script
 echo -e '\n\n\n'
-echo "$(date +"%T"):  Executing torch_test.py"
+echo "$(date +"%T"):  Executing train.py"
 python3 /home/jueqi/projects/def-jlevman/jueqi/pytorch_Unet/train.py \
        --data_dir="$SLURM_TMPDIR" \
        --epochs="$EPOCHS" \
