@@ -15,7 +15,7 @@ class UNet(nn.Module):
     def __init__(
             self,
             in_channels: int = 1,
-            out_classes: int = 2,  # 1
+            out_classes: int = 1,  # 1
             dimensions: int = 2,
             num_encoding_blocks: int = 3,
             out_channels_first_layer: int = 8,
