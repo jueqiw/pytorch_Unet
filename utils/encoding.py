@@ -58,6 +58,7 @@ class Encoder(nn.Module):
         skip_connections = []
         for encoding_block in self.encoding_blocks:
             x, skip_connnection = encoding_block(x)
+            print(x.shape, skip_connnection.shape)
             skip_connections.append(skip_connnection)
         return skip_connections, x
 
