@@ -15,7 +15,7 @@ import nibabel as nib
 from time import ctime
 from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
-# from torch.nn import CrossEntropyLoss  # dont work
+from torch.nn import BCEWithLogitsLoss
 from torchvision.transforms import Resize
 from utils.matrixes import matrix
 import argparse
@@ -40,7 +40,7 @@ def prepare_batch(batch, device):
     foreground = batch[label][DATA].to(device).squeeze()
     targets = torch.zeros_like(foreground).to(device)
     targets[foreground > 0.5] = 1
-    return inputs, targets
+    return inputs, targets.float()
 
 
 def forward(model, inputs):
@@ -70,6 +70,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
     is_training = action == Action.TRAIN
     epoch_losses = []
     model.train(is_training)
+    loss_f_mean = BCEWithLogitsLoss(weight=torch.tensor([1, 1], dtype=torch.float), reduction='mean')
     ious = []
     dices = []
     i = 0
@@ -80,7 +81,8 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
         with torch.set_grad_enabled(is_training):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
-            iou, dice, batch_loss = matrix(probabilities, targets)
+            iou, dice = matrix(probabilities, targets)
+            batch_loss = loss_f_mean(logits, targets)
             ious.append(iou)
             dices.append(dice)
             # batch_loss = batch_losses.mean()
