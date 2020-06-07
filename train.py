@@ -16,6 +16,7 @@ from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
 # from torch.nn import BCEWithLogitsLoss
 from torch.nn import MultiLabelSoftMarginLoss
+from torch.utils.tensorboard import SummaryWriter
 from torchvision.transforms import Resize
 from utils.matrixes import matrix
 import torch.nn.functional as F
@@ -114,6 +115,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
     option = Option()
     args = option.parse()
+    # default `log_dir` is "runs" - we'll be more specific here
+    writer = SummaryWriter('summary/fashion_mnist_experiment_1')
 
     device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
     logging.info(f'Using device {device}')
@@ -121,13 +124,16 @@ if __name__ == "__main__":
     SPATIAL_DIMENSIONS = 2, 3, 4
 
     training_batch_size = args.batchsize
-    validation_batch_size = args.batchsize
+    validation_batch_size = 2 * args.batchsize
     num_epochs = 500
 
-    # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
-    datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR]
+    datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
+    # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR]
     training_set, validation_set = get_dataset(datasets)
 
+    # Pytorch's DataLoader is responsible for managing batches. You can create a DataLoader from any Dataset.
+    # DataLoader makes it easier to iterate over batches. Rather than having to use train_ds[i*bs : i*bs+bs],
+    # the DataLoader gives us each minibatch automatically.
     training_loader = torch.utils.data.DataLoader(
         training_set,
         batch_size=training_batch_size,

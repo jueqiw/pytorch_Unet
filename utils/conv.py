@@ -72,6 +72,8 @@ class ConvolutionalBlock(nn.Module):
         self.activation_layer = activation_layer
         self.dropout_layer = dropout_layer
 
+        # A Sequential object runs each of the modules contained within it, in a sequential manner. This is a simpler
+        # way of writing our neural network.
         self.block = nn.Sequential(*block)
 
     def forward(self, x):

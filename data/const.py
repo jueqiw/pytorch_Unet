@@ -1,4 +1,4 @@
-from config import *
+from .config import *
 from pathlib import Path
 import os
 
@@ -33,8 +33,8 @@ CC359_MANUAL_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks/
 
 NFBS_DATASET_DIR = DATA_ROOT / "NFBS//NFBS_Dataset"
 
-ADNI_DATASET_DIR_1 = "/project/6005889/U-Net_MRI-Data/ADNI"
-ADNI_DATASET_DIR_2 = "/project/6005889/U-Net_MRI-Data/ADNI/ADNI"
+ADNI_DATASET_DIR_1 = DATA_ROOT / "ADNI"
+ADNI_DATASET_DIR_2 = DATA_ROOT / "ADNI/ADNI"
 
 ADNI_LABEL = "brain_extraction"
 
