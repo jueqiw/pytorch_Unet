@@ -115,6 +115,10 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
     option = Option()
     args = option.parse()
+
+    if not os.path.exists('./summary'):
+        os.mkdir('summary')
+
     # default `log_dir` is "runs" - we'll be more specific here
     writer = SummaryWriter('summary/fashion_mnist_experiment_1')
 
@@ -122,10 +126,6 @@ if __name__ == "__main__":
     logging.info(f'Using device {device}')
     CHANNELS_DIMENSION = 1
     SPATIAL_DIMENSIONS = 2, 3, 4
-
-    training_batch_size = args.batchsize
-    validation_batch_size = 2 * args.batchsize
-    num_epochs = 500
 
     datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
     # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR]
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     # the DataLoader gives us each minibatch automatically.
     training_loader = torch.utils.data.DataLoader(
         training_set,
-        batch_size=training_batch_size,
+        batch_size=args.batchsize,
         shuffle=True,
         num_workers=multiprocessing.cpu_count(),
         # num_workers=0,
@@ -144,13 +144,14 @@ if __name__ == "__main__":
 
     validation_loader = torch.utils.data.DataLoader(
         validation_set,
-        batch_size=validation_batch_size,
+        batch_size=2 * args.batchsize,
         num_workers=multiprocessing.cpu_count(),
         # num_workers=0,
     )
 
     model, optimizer = get_model_and_optimizer(device)
     logging.info(f'get Network!\n')
+
 
     if args.load:
         model.load_state_dict(

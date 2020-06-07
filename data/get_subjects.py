@@ -16,8 +16,8 @@ def get_img(mri_list):
     for mri in mri_list:
         try:
             # in case some times found the file isnt exist like ".xxx" file
-            img = nib.load(mri.img_path).get_data()
-            label = nib.load(mri.img_path).get_data().squeeze()
+            img = nib.load(mri.img_path).get_data().astype(np.float32)
+            label = nib.load(mri.img_path).get_data().squeeze().astype(np.float32)
         except OSError as e:
             print("not such img file:", mri.img_path)
             continue
@@ -29,6 +29,7 @@ def get_img(mri_list):
 
         if np.isinf(np.max(label)):
             continue
+
         yield from_numpy(img), from_numpy(label)
 
 
