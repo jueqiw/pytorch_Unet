@@ -40,7 +40,7 @@ def prepare_batch(batch, device):
     foreground = batch[label][DATA].to(device).squeeze()
     targets = torch.zeros_like(foreground).to(device)
     targets[foreground > 0.5] = 1
-    return inputs, targets.float().unsqueeze(1)
+    return inputs, torch.unsqueeze(targets.float(), 1)
 
 
 def forward(model, inputs):
@@ -77,6 +77,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
     for batch_idx, batch in enumerate(loader):
         i += 1
         inputs, targets = prepare_batch(batch, device)
+        print(targets.shape)
         optimizer.zero_grad()
         with torch.set_grad_enabled(is_training):
             logits = forward(model, inputs)
