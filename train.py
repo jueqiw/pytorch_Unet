@@ -87,7 +87,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
             if is_training:
                 batch_loss.backward()
                 optimizer.step()
-            epoch_losses.append(batch_loss.item())
+            epoch_losses.append(batch_loss)
     epoch_losses = np.array(epoch_losses)
     ious = np.array(ious)
     dices = np.array(dices)
