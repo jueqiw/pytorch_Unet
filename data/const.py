@@ -1,5 +1,6 @@
 from .config import Option
 from pathlib import Path
+import os
 
 SIZE = 128
 LEARN_RATE = 0.001
@@ -24,7 +25,7 @@ DATA_ROOT = Path(opt.parse().data_dir) / "work"
 
 print(DATA_ROOT)
 
-for file in DATA_ROOT:
+for file in os.listdir(DATA_ROOT):
     print(file)
 
 CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
