@@ -9,13 +9,13 @@ def matrix(prob, target):
     pred = torch.gt(prob, threshold)
     mask_bool = torch.gt(target.float(), threshold)
 
-    _and = (pred & mask_bool).float().sum((1, 2, 3, 4))
-    _or = (pred | mask_bool).float().sum((1, 2, 3, 4))
+    _and = (pred & mask_bool).float().sum()
+    _or = (pred | mask_bool).float().sum()
 
     iou = ((_and + SMOOTH) / (_or + SMOOTH)).sum()
 
-    pred_sum = pred.float().sum((1, 2, 3, 4))
-    mask_bool_sum = mask_bool.float().sum((1, 2, 3, 4))
+    pred_sum = pred.float().sum()
+    mask_bool_sum = mask_bool.float().sum()
 
     dice = ((2 * _and) / (pred_sum + mask_bool_sum)).sum()
     return iou, dice

@@ -15,7 +15,8 @@ import nibabel as nib
 from time import ctime
 from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
-from torch.nn import CrossEntropyLoss
+# from torch.nn import CrossEntropyLoss  # dont work
+from torch.nn import BCELoss
 from torchvision.transforms import Resize
 from utils.matrixes import matrix
 import argparse
@@ -67,10 +68,10 @@ def get_model_and_optimizer(device):
     return model, optimizer
 
 
-def run_epoch(epoch_idx, action, loader, model, optimizer):
+def run_epoch(epoch_idx, action, loader, model, optimizer, min_):
     is_training = action == Action.TRAIN
     epoch_losses = []
-    loss_fn = CrossEntropyLoss(reduction='mean')
+    loss = BCELoss()
     model.train(is_training)
     ious = 0
     dices = 0
@@ -82,7 +83,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
         with torch.set_grad_enabled(is_training):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
-            batch_loss = loss_fn(logits, targets.long())
+            batch_loss = BCELoss(probabilities, targets)
             iou, dice = matrix(probabilities, targets)
             ious += iou
             dices += dice
@@ -93,7 +94,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer):
             epoch_losses.append(batch_loss.item())
     epoch_losses = np.array(epoch_losses)
     print(f'{ctime()}: Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.3f} | iou: {ious / i:0.3f} | dices : {dices / i:0.3f}')
-    if action.value == Action.VALIDATE and epoch_losses < min_loss:
+    if action.value == Action.VALIDATE and epoch_losses.mean() < min_loss:
         min_loss = epoch_losses
         torch.save(model.state_dict(), f'Epoch_{epoch_idx}_loss_{min_loss}.pth')
         logging.info(f'{ctime()} :Saved interrupt')
