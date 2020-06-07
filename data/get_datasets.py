@@ -32,7 +32,7 @@ def get_dataset(datasets):
         ZNormalization(masking_method=ZNormalization.mean),
         RandomNoise(),
         ToCanonical(),
-        CropOrPad((128, 128, 128)),  # do not know what it do
+        CropOrPad((256, 256, 256)),  # do not know what it do
         RandomFlip(axes=(0,)),
         OneOf({
             RandomAffine(): 0.8,
@@ -44,7 +44,7 @@ def get_dataset(datasets):
         # HistogramStandardization(landmarks_dict={MRI: landmarks}),
         ZNormalization(masking_method=ZNormalization.mean),
         ToCanonical(),
-        CropOrPad((128, 128, 128)),
+        CropOrPad((256, 256, 256)),
         # Resample((4, 4, 4)),
     ])
 

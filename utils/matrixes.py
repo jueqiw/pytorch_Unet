@@ -19,16 +19,16 @@ def matrix(probs, targets):
 
         _and = (pred & mask_bool).float().sum()
         _or = (pred | mask_bool).float().sum()
-        iou = ((_and + SMOOTH) / (_or + SMOOTH)).sum()
+        iou = ((_and + SMOOTH) / (_or + SMOOTH))
 
         pred_sum = pred.float().sum()
         mask_bool_sum = mask_bool.float().sum()
-        dice = ((2 * _and) / (pred_sum + mask_bool_sum)).sum()
+        dice = ((2 * _and) / (pred_sum + mask_bool_sum))
 
         print(iou.shape)
         print(iou)
-        _iou.append(iou)
-        _dice.append(dice)
+        _iou.append(iou.item())
+        _dice.append(dice.item())
 
     _iou = np.array(_iou)
     _dice = np.array(_dice)

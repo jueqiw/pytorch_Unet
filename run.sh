@@ -27,7 +27,7 @@ cd work
 #tar -cf ~/projects/def-foo/johndoe/results.tar work
 
 EPOCHS=500
-BATCH_SIZE=8
+BATCH_SIZE=4
 
 # run script
 echo -e '\n\n\n'
