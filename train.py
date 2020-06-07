@@ -19,6 +19,7 @@ import torch.nn.functional as F
 from torch.nn import MultiLabelSoftMarginLoss
 from torchvision.transforms import Resize
 from utils.matrixes import matrix
+import torch.nn.functional as F
 import argparse
 import logging
 import sys
@@ -41,7 +42,8 @@ def prepare_batch(batch, device):
     foreground = batch[label][DATA].to(device).squeeze()
     targets = torch.zeros_like(foreground).to(device)
     targets[foreground > 0.5] = 1
-    # targets = torch.unsqueeze(targets.float(), 1)
+    inputs = F.interpolate(inputs, size=(128, 128, 128))
+    targets = F.interpolate(targets, size=(128, 128, 128))
     return inputs, targets.float()
 
 
@@ -59,7 +61,6 @@ def get_model_and_optimizer(device):
         dimensions=3,
         num_encoding_blocks=3,
         out_channels_first_layer=8,
-        # normalization='batch',
         upsampling_type='conv',
         padding=2,
         activation='PReLU',

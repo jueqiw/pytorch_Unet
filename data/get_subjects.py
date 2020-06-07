@@ -22,8 +22,8 @@ def get_img(mri_list):
             print("not such img file:", mri.img_path)
             continue
 
-        img = resize(img, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
-        label = resize(label, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
+        # img = resize(img, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
+        # label = resize(label, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
         if np.isnan(np.max(img)):
             continue
 
@@ -44,21 +44,21 @@ def get_subjects(datasets):
     random.shuffle(mri_list)  # shuffle it to pick the val set
 
     # in case some times found the file isnt exist like ".xxx" system file
-    # subjects = [
-    #     tio.Subject(
-    #         img=tio.Image(tensor=img, label=tio.INTENSITY),  # image to be segmented
-    #         label=tio.Image(tensor=label, label=tio.LABEL),  # brain mask we are predicting
-    #     )
-    #     for img, label in get_img(mri_list)
-    #     ]
-
     subjects = [
         tio.Subject(
-            img=tio.Image(path=mri.img_path, label=tio.INTENSITY),  # image to be segmented
-            label=tio.Image(path=mri.label_path, label=tio.LABEL),  # brain mask we are predicting
+            img=tio.Image(tensor=img, label=tio.INTENSITY),  # image to be segmented
+            label=tio.Image(tensor=label, label=tio.LABEL),  # brain mask we are predicting
         )
-        for mri in mri_list
+        for img, label in get_img(mri_list)
         ]
+
+    # subjects = [
+    #     tio.Subject(
+    #         img=tio.Image(path=mri.img_path, label=tio.INTENSITY),  # image to be segmented
+    #         label=tio.Image(path=mri.label_path, label=tio.LABEL),  # brain mask we are predicting
+    #     )
+    #     for mri in mri_list
+    #     ]
     print(f"{ctime()}: getting number of subjects {len(subjects)}")
     return subjects
 
