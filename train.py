@@ -1,9 +1,6 @@
 import torch
 from torchio import AFFINE, DATA, PATH, TYPE, STEM
 from data.get_datasets import get_dataset
-import warnings
-import torchio
-import numpy as np
 from utils.unet import UNet, UNet3D
 from data.const import *
 from data.config import Option
@@ -17,11 +14,12 @@ import torch.nn.functional as F
 # from torch.nn import BCEWithLogitsLoss
 from torch.nn import MultiLabelSoftMarginLoss
 from torch.utils.tensorboard import SummaryWriter
-from torchvision.transforms import Resize
 from utils.matrixes import matrix
-import torch.nn.functional as F
-import argparse
+import warnings
+import torchio
+import numpy as np
 import logging
+logging.warning('Worrying Stuff')
 import sys
 import os
 
