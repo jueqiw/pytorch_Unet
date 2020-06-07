@@ -4,6 +4,7 @@ import numpy as np
 CHANNELS_DIMENSION = 1
 SPATIAL_DIMENSIONS = 2, 3, 4
 
+
 def matrix(probs, targets):
     SMOOTH = 1e-6
     device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
@@ -25,8 +26,7 @@ def matrix(probs, targets):
         mask_bool_sum = mask_bool.float().sum()
         dice = ((2 * _and) / (pred_sum + mask_bool_sum))
 
-        print(iou.shape)
-        print(iou)
+        print(iou.item())
         _iou.append(iou.item())
         _dice.append(dice.item())
 
