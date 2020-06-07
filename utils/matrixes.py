@@ -26,7 +26,6 @@ def matrix(probs, targets):
         mask_bool_sum = mask_bool.float().sum()
         dice = ((2 * _and) / (pred_sum + mask_bool_sum))
 
-        print(iou.item())
         _iou.append(iou.item())
         _dice.append(dice.item())
 
