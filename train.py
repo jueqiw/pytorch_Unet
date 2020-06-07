@@ -79,11 +79,11 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
     for batch_idx, batch in enumerate(loader):
         i += 1
         inputs, targets = prepare_batch(batch, device)
-        print(targets.shape)
+        # print(targets.shape)
         optimizer.zero_grad()
         with torch.set_grad_enabled(is_training):
             logits = forward(model, inputs)
-            print(logits.shape)
+            # print(logits.shape)
             probabilities = torch.sigmoid(logits)
             iou, dice = matrix(probabilities, targets)
             batch_loss = loss_f_mean(logits, targets)
