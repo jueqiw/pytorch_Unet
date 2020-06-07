@@ -81,6 +81,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
             iou, dice, batch_loss = matrix(probabilities, targets)
+            print(iou.shape)
             ious.append(iou)
             dices.append(dice)
             # batch_loss = batch_losses.mean()
