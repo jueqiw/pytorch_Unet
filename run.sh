@@ -2,7 +2,7 @@
 #SBATCH --gres=gpu:t4:1  # request GPU "generic resource"
 #SBATCH --cpus-per-task=16   # maximum CPU cores per GPU request: 6 on Cedar, 16 on Graham.
 #SBATCH --mem=150G   # memory
-#SBATCH --output=out-%j.out  # %N for node name, %j for jobID
+#SBATCH --output=epoch8-%j.out  # %N for node name, %j for jobID
 #SBATCH --time=03-00:00      # time (DD-HH:MM)
 #SBATCH --mail-user=x2019cwn@stfx.ca # used to send email
 #SBATCH --mail-type=ALL
@@ -27,7 +27,7 @@ cd work
 #tar -cf ~/projects/def-foo/johndoe/results.tar work
 
 EPOCHS=500
-BATCH_SIZE=4
+BATCH_SIZE=8
 
 # run script
 echo -e '\n\n\n'
