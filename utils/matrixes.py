@@ -14,7 +14,7 @@ def matrix(prob, target):
     _and = (pred & mask_bool).float().sum(dim=SPATIAL_DIMENSIONS)
     _or = (pred | mask_bool).float().sum(dim=SPATIAL_DIMENSIONS)
 
-    iou = ((_and + SMOOTH) / (_or + SMOOTH))
+    iou = ((_and + SMOOTH) / (_or + SMOOTH)).sum()
 
     pred_sum = pred.float().sum(dim=SPATIAL_DIMENSIONS)
     mask_bool_sum = mask_bool.float().sum(dim=SPATIAL_DIMENSIONS)
