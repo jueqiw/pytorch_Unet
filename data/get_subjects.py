@@ -12,25 +12,28 @@ from time import ctime
 import numpy as np
 
 
-def get_img(mri_list):
-    for mri in mri_list:
-        try:
-            # in case some times found the file isnt exist like ".xxx" file
-            img = nib.load(mri.img_path).get_data().astype(np.float32)
-            label = nib.load(mri.img_path).get_data().squeeze().astype(np.float32)
-        except OSError as e:
-            print("not such img file:", mri.img_path)
-            continue
+def get_img(mri):
+    flag = False
+    img = ""
+    label = ""
+    try:
+        # in case some times found the file isnt exist like ".xxx" file
+        img = nib.load(mri.img_path).get_data().astype(np.float32)
+        label = nib.load(mri.img_path).get_data().squeeze().astype(np.float32)
+    except OSError as e:
+        print("not such img file:", mri.img_path)
+        flag = True
+        return img, label, flag
 
-        # img = resize(img, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
-        # label = resize(label, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
-        if np.isnan(np.max(img)):
-            continue
+    # img = resize(img, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
+    # label = resize(label, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
+    if np.isnan(np.max(img)):
+        flag = True
 
-        if np.isinf(np.max(label)):
-            continue
+    if np.isinf(np.max(label)):
+        flag = True
 
-        yield from_numpy(img), from_numpy(label)
+    return from_numpy(img), from_numpy(label), flag
 
 
 def get_subjects(datasets):
@@ -44,22 +47,22 @@ def get_subjects(datasets):
     random.seed(42)
     random.shuffle(mri_list)  # shuffle it to pick the val set
 
-    # in case some times found the file isnt exist like ".xxx" system file
-    subjects = [
-        tio.Subject(
-            img=tio.Image(tensor=img, label=tio.INTENSITY),  # image to be segmented
-            label=tio.Image(tensor=label, label=tio.LABEL),  # brain mask we are predicting
-        )
-        for img, label in get_img(mri_list)
-        ]
+    subjects = []
+    for mri in mri_list:
+        if mri.dataset == ADNI_DATASET_DIR_1:
+            subject = tio.Subject(
+                img=tio.Image(path=mri.img_path, label=tio.INTENSITY),
+                label=tio.Image(path=mri.label_path, label=tio.LABEL)
+            )
+            subjects.append(subject)
+        else:
+            img, label, flag = get_img(mri)
+            subject = tio.Subject(
+                img=tio.Image(tensor=img, label=tio.INTENSITY),
+                label=tio.Image(tensor=label, label=tio.LABEL)
+            )
+            subjects.append(subject)
 
-    # subjects = [
-    #     tio.Subject(
-    #         img=tio.Image(path=mri.img_path, label=tio.INTENSITY),  # image to be segmented
-    #         label=tio.Image(path=mri.label_path, label=tio.LABEL),  # brain mask we are predicting
-    #     )
-    #     for mri in mri_list
-    #     ]
     print(f"{ctime()}: getting number of subjects {len(subjects)}")
     return subjects
 
