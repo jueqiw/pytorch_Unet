@@ -21,11 +21,11 @@ LEARN_RATE = 0.001
 
 opt = Option()
 
-# DATA_ROOT = Path(opt.parse().data_dir) / "work"
-DATA_ROOT = Path(opt.parse().data_dir)
+DATA_ROOT = Path(opt.parse().data_dir) / "work"
+# DATA_ROOT = Path(opt.parse().data_dir)
 
-for file in os.listdir(DATA_ROOT):
-    print(file)
+# for file in os.listdir(DATA_ROOT):
+#     print(file)
 
 CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
 CC359_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//STAPLE"
