@@ -14,10 +14,10 @@ def matrix(prob, target):
     _and = (pred & mask_bool).float().sum(dim=SPATIAL_DIMENSIONS)
     _or = (pred | mask_bool).float().sum(dim=SPATIAL_DIMENSIONS)
 
-    iou = ((_and + SMOOTH) / (_or + SMOOTH)).sum()
+    iou = ((_and + SMOOTH) / (_or + SMOOTH))
 
     pred_sum = pred.float().sum(dim=SPATIAL_DIMENSIONS)
     mask_bool_sum = mask_bool.float().sum(dim=SPATIAL_DIMENSIONS)
 
-    dice = ((2 * _and) / (pred_sum + mask_bool_sum)).sum()
+    dice = ((2 * _and) / (pred_sum + mask_bool_sum))
     return iou, dice, 1 - dice

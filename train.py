@@ -70,8 +70,8 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
     is_training = action == Action.TRAIN
     epoch_losses = []
     model.train(is_training)
-    ious = 0
-    dices = 0
+    ious = []
+    dices = []
     i = 0
     for batch_idx, batch in enumerate(loader):
         i += 1
@@ -81,15 +81,17 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
             iou, dice, batch_loss = matrix(probabilities, targets)
-            ious += iou
-            dices += dice
+            ious.append(iou)
+            dices.append(dice)
             # batch_loss = batch_losses.mean()
             if is_training:
                 batch_loss.backward()
                 optimizer.step()
             epoch_losses.append(batch_loss.item())
     epoch_losses = np.array(epoch_losses)
-    print(f'{ctime()}: Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.3f} | iou: {ious / i:0.3f} | dices : {dices / i:0.3f}')
+    ious = np.array(ious)
+    dices = np.array(dices)
+    print(f'{ctime()}: Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.5f} | iou: {ious.mean():0.5f} | dices : {dices.mean():0.5f}')
     if action.value == Action.VALIDATE and epoch_losses.mean() < min_loss:
         min_loss = epoch_losses
         torch.save(model.state_dict(), f'Epoch_{epoch_idx}_loss_{min_loss}.pth')
