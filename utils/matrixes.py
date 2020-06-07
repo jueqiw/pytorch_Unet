@@ -26,6 +26,7 @@ def matrix(probs, targets):
         dice = ((2 * _and) / (pred_sum + mask_bool_sum)).sum()
 
         print(iou.shape)
+        print(iou)
         _iou.append(iou)
         _dice.append(dice)
 
