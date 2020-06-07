@@ -1,4 +1,4 @@
-from config import Option
+from config import *
 from pathlib import Path
 import os
 
