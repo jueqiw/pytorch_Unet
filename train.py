@@ -40,8 +40,6 @@ def prepare_batch(batch, device):
     foreground = batch[label][DATA].to(device).squeeze()
     targets = torch.zeros_like(foreground).to(device)
     targets[foreground > 0.5] = 1
-    inputs = F.interpolate(inputs, size=(128, 128, 128))
-    targets = F.interpolate(targets, size=(128, 128, 128))
     return inputs, targets.float()
 
 
@@ -67,7 +65,7 @@ def get_model_and_optimizer(device):
     return model, optimizer
 
 
-def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
+def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
     is_training = action == Action.TRAIN
     epoch_losses = []
     model.train(is_training)
@@ -78,7 +76,6 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
     for batch_idx, batch in enumerate(loader):
         i += 1
         inputs, targets = prepare_batch(batch, device)
-        # print(targets.shape)
         optimizer.zero_grad()
         with torch.set_grad_enabled(is_training): #
             logits = forward(model, inputs)
@@ -97,16 +94,19 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
     print(f'{ctime()}: Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.5f} | iou: {ious.mean():0.5f} | dices : {dices.mean():0.5f}')
     if action.value == Action.VALIDATE and epoch_losses.mean() < min_loss:
         min_loss = epoch_losses
-        torch.save(model.state_dict(), f'Epoch_{epoch_idx}_loss_{min_loss}.pth')
-        logging.info(f'{ctime()} :Saved interrupt')
+        torch.save(model.state_dict(), f'./checkpoint/Epoch_{epoch_idx}_loss_{min_loss}.pth')
+        logging.info(f'{ctime()} :Saved model')
+    return epoch_losses.mean()
 
 
-def train(num_epochs, training_loader, validation_loader, model, optimizer, min_loss):
-    run_epoch(0, Action.VALIDATE, validation_loader, model, optimizer, min_loss)
+def train(num_epochs, training_loader, validation_loader, model, optimizer, min_loss, writer):
     for epoch_idx in range(1, num_epochs + 1):
         print('Starting epoch', epoch_idx)
-        run_epoch(epoch_idx, Action.TRAIN, training_loader, model, optimizer, min_loss)
-        run_epoch(epoch_idx, Action.VALIDATE, validation_loader, model, optimizer, min_loss)
+        loss = run_epoch(epoch_idx, Action.TRAIN, training_loader, model, optimizer, min_loss, writer)
+        # ...log the running loss
+        writer.add_scalar('training loss', loss, num_epochs * len(training_loader) + epoch_idx)
+        loss = run_epoch(epoch_idx, Action.VALIDATE, validation_loader, model, optimizer, min_loss, writer)
+        writer.add_scalar('val loss', loss, num_epochs * len(validation_loader) + epoch_idx)
 
 
 if __name__ == "__main__":
@@ -116,9 +116,11 @@ if __name__ == "__main__":
 
     if not os.path.exists('./summary'):
         os.mkdir('summary')
+    if not os.path.exists('./checkpoint'):
+        os.mkdir('checkpoint')
 
     # default `log_dir` is "runs" - we'll be more specific here
-    writer = SummaryWriter('summary/fashion_mnist_experiment_1')
+    writer = SummaryWriter('summary/Unet')
 
     device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
     logging.info(f'Using device {device}')
@@ -137,14 +139,12 @@ if __name__ == "__main__":
         batch_size=args.batchsize,
         shuffle=True,
         num_workers=multiprocessing.cpu_count(),
-        # num_workers=0,
     )
 
     validation_loader = torch.utils.data.DataLoader(
         validation_set,
         batch_size=2 * args.batchsize,
         num_workers=multiprocessing.cpu_count(),
-        # num_workers=0,
     )
 
     model, optimizer = get_model_and_optimizer(device)
@@ -157,7 +157,7 @@ if __name__ == "__main__":
         )
         logging.info(f'Model loaded from {args.load}')
     model.to(device=device)
-    min_loss = 1000
+    min_loss = 100000
 
     try:
         train(
@@ -166,7 +166,9 @@ if __name__ == "__main__":
             validation_loader=validation_loader,
             model=model,
             optimizer=optimizer,
-            min_loss=min_loss)
+            min_loss=min_loss,
+            writer=writer,
+            )
     except KeyboardInterrupt:
         torch.save(model.state_dict(), './checkpoint/INTERRUPTED.pth')
         logging.info('Saved interrupt')

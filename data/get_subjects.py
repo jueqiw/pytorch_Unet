@@ -12,28 +12,29 @@ from time import ctime
 import numpy as np
 
 
-def get_img(mri):
+def get_img(mri_list):
     flag = False
     img = ""
     label = ""
-    try:
-        # in case some times found the file isnt exist like ".xxx" file
-        img = nib.load(mri.img_path).get_data().astype(np.float32)
-        label = nib.load(mri.img_path).get_data().squeeze().astype(np.float32)
-    except OSError as e:
-        print("not such img file:", mri.img_path)
-        flag = True
-        return img, label, flag
+    for mri in mri_list:
+        try:
+            # in case some times found the file isnt exist like ".xxx" file
+            img = nib.load(mri.img_path).get_data().astype(np.float32)
+            label = nib.load(mri.img_path).get_data().squeeze().astype(np.float32)
 
-    # img = resize(img, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
-    # label = resize(label, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
-    if np.isnan(np.max(img)):
-        flag = True
+            img = resize(img, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
+            label = resize(label, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
 
-    if np.isinf(np.max(label)):
-        flag = True
+            if np.isnan(np.max(img)):
+                continue
 
-    return from_numpy(img), from_numpy(label), flag
+            if np.isinf(np.max(label)):
+                continue
+
+            yield from_numpy(img), from_numpy(label)
+        except OSError as e:
+            print("not such img file:", mri.img_path)
+            continue
 
 
 def get_subjects(datasets):
@@ -47,21 +48,12 @@ def get_subjects(datasets):
     random.seed(42)
     random.shuffle(mri_list)  # shuffle it to pick the val set
 
-    subjects = []
-    for mri in mri_list:
-        if mri.dataset == ADNI_DATASET_DIR_1:
-            subject = tio.Subject(
-                img=tio.Image(path=mri.img_path, label=tio.INTENSITY),
-                label=tio.Image(path=mri.label_path, label=tio.LABEL)
-            )
-            subjects.append(subject)
-        else:
-            img, label, flag = get_img(mri)
-            subject = tio.Subject(
+    subjects = [
+        tio.Subject(
                 img=tio.Image(tensor=img, label=tio.INTENSITY),
                 label=tio.Image(tensor=label, label=tio.LABEL)
-            )
-            subjects.append(subject)
+            ) for img, label in get_img(mri_list)
+    ]
 
     print(f"{ctime()}: getting number of subjects {len(subjects)}")
     return subjects
