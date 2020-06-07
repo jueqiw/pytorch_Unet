@@ -28,8 +28,7 @@ import os
 # those words used when building the dataset subject
 img = "img"
 label = "label"
-dir_checkpoint = 'checkpoints/'
-min_loss = 1000
+dir_checkpoint = 'checkpoint/'
 
 
 class Action(enum.Enum):
@@ -68,7 +67,7 @@ def get_model_and_optimizer(device):
     return model, optimizer
 
 
-def run_epoch(epoch_idx, action, loader, model, optimizer, min_):
+def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
     is_training = action == Action.TRAIN
     epoch_losses = []
     loss = BCELoss()
@@ -100,12 +99,12 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_):
         logging.info(f'{ctime()} :Saved interrupt')
 
 
-def train(num_epochs, training_loader, validation_loader, model, optimizer):
-    run_epoch(0, Action.VALIDATE, validation_loader, model, optimizer)
+def train(num_epochs, training_loader, validation_loader, model, optimizer, min_loss):
+    run_epoch(0, Action.VALIDATE, validation_loader, model, optimizer, min_loss)
     for epoch_idx in range(1, num_epochs + 1):
         print('Starting epoch', epoch_idx)
-        run_epoch(epoch_idx, Action.TRAIN, training_loader, model, optimizer)
-        run_epoch(epoch_idx, Action.VALIDATE, validation_loader, model, optimizer)
+        run_epoch(epoch_idx, Action.TRAIN, training_loader, model, optimizer, min_loss)
+        run_epoch(epoch_idx, Action.VALIDATE, validation_loader, model, optimizer, min_loss)
 
 
 if __name__ == "__main__":
@@ -150,6 +149,7 @@ if __name__ == "__main__":
         )
         logging.info(f'Model loaded from {args.load}')
     model.to(device=device)
+    min_loss = 1000
 
     try:
         train(
@@ -157,7 +157,8 @@ if __name__ == "__main__":
             training_loader=training_loader,
             validation_loader=validation_loader,
             model=model,
-            optimizer=optimizer)
+            optimizer=optimizer,
+            min_loss=min_loss)
     except KeyboardInterrupt:
         torch.save(model.state_dict(), './checkpoint/INTERRUPTED.pth')
         logging.info('Saved interrupt')
