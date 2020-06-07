@@ -16,7 +16,6 @@ from time import ctime
 from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
 # from torch.nn import CrossEntropyLoss  # dont work
-from torch.nn import BCEWithLogitsLoss
 from torchvision.transforms import Resize
 from utils.matrixes import matrix
 import argparse
@@ -71,7 +70,6 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
     is_training = action == Action.TRAIN
     epoch_losses = []
     model.train(is_training)
-    loss = BCEWithLogitsLoss(pos_weight=torch.ones([2]))
     ious = 0
     dices = 0
     i = 0
@@ -82,8 +80,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
         with torch.set_grad_enabled(is_training):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
-            iou, dice = matrix(probabilities, targets)
-            batch_loss = loss(logits, targets.squeeze())
+            iou, dice, batch_loss = matrix(probabilities, targets)
             ious += iou
             dices += dice
             # batch_loss = batch_losses.mean()

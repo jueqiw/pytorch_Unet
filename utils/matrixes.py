@@ -1,5 +1,7 @@
 import torch
 
+CHANNELS_DIMENSION = 1
+SPATIAL_DIMENSIONS = 2, 3, 4
 
 def matrix(prob, target):
     SMOOTH = 1e-6
@@ -9,13 +11,13 @@ def matrix(prob, target):
     pred = torch.gt(prob, threshold)
     mask_bool = torch.gt(target.float(), threshold)
 
-    _and = (pred & mask_bool).float().sum()
-    _or = (pred | mask_bool).float().sum()
+    _and = (pred & mask_bool).float().sum(dim=SPATIAL_DIMENSIONS)
+    _or = (pred | mask_bool).float().sum(dim=SPATIAL_DIMENSIONS)
 
-    iou = ((_and + SMOOTH) / (_or + SMOOTH)).sum()
+    iou = ((_and + SMOOTH) / (_or + SMOOTH)).sum(dim=SPATIAL_DIMENSIONS)
 
-    pred_sum = pred.float().sum()
-    mask_bool_sum = mask_bool.float().sum()
+    pred_sum = pred.float().sum(dim=SPATIAL_DIMENSIONS)
+    mask_bool_sum = mask_bool.float().sum(dim=SPATIAL_DIMENSIONS)
 
-    dice = ((2 * _and) / (pred_sum + mask_bool_sum)).sum()
-    return iou, dice
+    dice = ((2 * _and) / (pred_sum + mask_bool_sum)).sum(dim=SPATIAL_DIMENSIONS)
+    return iou, dice, 1 - dice
