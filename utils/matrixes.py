@@ -20,4 +20,4 @@ def matrix(prob, target):
     mask_bool_sum = mask_bool.float().sum()
 
     dice = ((2 * _and) / (pred_sum + mask_bool_sum)).sum()
-    return iou, dice, 1 - dice
+    return iou, dice
