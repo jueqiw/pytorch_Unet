@@ -40,7 +40,7 @@ def prepare_batch(batch, device):
     foreground = batch[label][DATA].to(device).squeeze()
     targets = torch.zeros_like(foreground).to(device)
     targets[foreground > 0.5] = 1
-    return inputs, targets.float().unsqueeze_(0)
+    return inputs, targets.float().unsqueeze(1)
 
 
 def forward(model, inputs):
