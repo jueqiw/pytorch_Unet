@@ -21,9 +21,8 @@ LEARN_RATE = 0.001
 
 opt = Option()
 
-DATA_ROOT = Path(opt.parse().data_dir) / "work"
-
-print(DATA_ROOT)
+# DATA_ROOT = Path(opt.parse().data_dir) / "work"
+DATA_ROOT = Path(opt.parse().data_dir)
 
 for file in os.listdir(DATA_ROOT):
     print(file)
