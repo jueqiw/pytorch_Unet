@@ -6,7 +6,6 @@ import torchio
 import numpy as np
 from utils.unet import UNet, UNet3D
 from data.const import *
-from utils.loss import get_dice_loss
 from data.config import Option
 import enum
 import SimpleITK as sitk
@@ -82,7 +81,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss):
         inputs, targets = prepare_batch(batch, device)
         # print(targets.shape)
         optimizer.zero_grad()
-        with torch.set_grad_enabled(is_training):
+        with torch.set_grad_enabled(is_training): #
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
             iou, dice = matrix(probabilities, targets)
