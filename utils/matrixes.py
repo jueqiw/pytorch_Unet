@@ -19,5 +19,5 @@ def matrix(prob, target):
     pred_sum = pred.float().sum(dim=SPATIAL_DIMENSIONS)
     mask_bool_sum = mask_bool.float().sum(dim=SPATIAL_DIMENSIONS)
 
-    dice = ((2 * _and) / (pred_sum + mask_bool_sum))
+    dice = ((2 * _and) / (pred_sum + mask_bool_sum)).sum(dim=SPATIAL_DIMENSIONS)
     return iou, dice, 1 - dice
