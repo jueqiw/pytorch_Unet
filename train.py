@@ -1,5 +1,5 @@
 import torch
-from torchio import AFFINE, DATA, PATH, TYPE, STEM
+from torchio import DATA
 from data.get_datasets import get_dataset
 from tqdm import tqdm
 from utils.unet import UNet, UNet3D
