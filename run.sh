@@ -23,7 +23,7 @@ cd work
 
 RUN=1
 EPOCHS=500
-BATCH_SIZE=4
+BATCH_SIZE=8
 
 # run script
 echo -e '\n\n\n'

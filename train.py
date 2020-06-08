@@ -15,7 +15,6 @@ import torch.nn.functional as F
 from torch.nn import BCEWithLogitsLoss
 from torch.nn import MultiLabelSoftMarginLoss
 from torch.utils.tensorboard import SummaryWriter
-from utils.matrixes import matrix
 from utils.loss import get_dice_score
 import warnings
 warnings.filterwarnings("ignore")
