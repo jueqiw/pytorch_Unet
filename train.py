@@ -134,10 +134,12 @@ if __name__ == "__main__":
     SPATIAL_DIMENSIONS = 2, 3, 4
 
     if COMPUTECANADA:
-        datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
+        # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
+        datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR]
     else:
     # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR]
-        datasets = [ADNI_DATASET_DIR_1]
+        datasets = [CC359_DATASET_DIR]
+
     training_set, validation_set = get_dataset(datasets)
 
     # Pytorch's DataLoader is responsible for managing batches. You can create a DataLoader from any Dataset.
