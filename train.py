@@ -92,6 +92,8 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
                 batch_loss.backward()
                 optimizer.step()
             epoch_losses.append(batch_loss.item())
+            print(
+                f'{ctime()}: Epoch: {epoch_idx} Batch: {batch_idx}| {action.value} mean loss: {batch_loss.item():0.5f} | iou: {iou.item():0.5f} | dices : {dice.item():0.5f}')
     epoch_losses = np.array(epoch_losses)
     ious = np.array(ious)
     dices = np.array(dices)
@@ -100,16 +102,17 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
         min_loss = epoch_losses
         torch.save(model.state_dict(), f'./checkpoint/Epoch_{epoch_idx}_loss_{min_loss}.pth')
         logging.info(f'{ctime()} :Saved model')
-    return epoch_losses.mean()
+    return epoch_losses.mean(), min_loss
 
 
 def train(num_epochs, training_loader, validation_loader, model, optimizer, min_loss, writer):
+    min_loss = 1000000
     for epoch_idx in range(1, num_epochs + 1):
         print('Starting epoch', epoch_idx)
-        loss = run_epoch(epoch_idx, Action.TRAIN, training_loader, model, optimizer, min_loss, writer)
+        loss, min_loss = run_epoch(epoch_idx, Action.TRAIN, training_loader, model, optimizer, min_loss, writer)
         # ...log the running loss
         writer.add_scalar('training loss', loss, num_epochs * len(training_loader) + epoch_idx)
-        loss = run_epoch(epoch_idx, Action.VALIDATE, validation_loader, model, optimizer, min_loss, writer)
+        loss, min_loss = run_epoch(epoch_idx, Action.VALIDATE, validation_loader, model, optimizer, min_loss, writer)
         writer.add_scalar('val loss', loss, num_epochs * len(validation_loader) + epoch_idx)
 
 
