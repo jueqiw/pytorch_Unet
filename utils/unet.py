@@ -15,7 +15,7 @@ class UNet(nn.Module):
     def __init__(
             self,
             in_channels: int = 1,
-            out_classes: int = 1,  # 1
+            out_classes: int = 2,  # 1
             dimensions: int = 2,
             num_encoding_blocks: int = 3,
             out_channels_first_layer: int = 8,
@@ -86,7 +86,7 @@ class UNet(nn.Module):
         elif dimensions == 3:
             in_channels = out_channels_first_layer
         self.classifier = ConvolutionalBlock(
-            dimensions, in_channels, out_channels=1,
+            dimensions, in_channels, out_channels=out_classes,
             kernel_size=1, activation=None,
             dropout=0,
         )

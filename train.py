@@ -56,7 +56,7 @@ def forward(model, inputs):
 def get_model_and_optimizer(device):
     model = UNet(
         in_channels=1,
-        out_classes=1,
+        out_classes=2,
         dimensions=3,
         num_encoding_blocks=3,
         out_channels_first_layer=8,

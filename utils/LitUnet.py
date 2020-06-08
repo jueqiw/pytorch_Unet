@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
 from torch.nn import MultiLabelSoftMarginLoss
-from .
+from .unet import *
 import torch
 
 
@@ -8,15 +8,23 @@ class LitUnet(pl.LightningModule):
 
     def __init__(
             self,
-            initial_features: int = 32,
-            depth: int = 3,
+            out_channels_first_layer: int = 8,
+            out_classes: int = 2,
+            num_encoding_blocks: int = 3,
             n_labels: int = 2,
             normalization: bool = True,
             batch_size: int = 1,
     ):
         super().__init__()
-        self.unet = UNet3d(
-            initial_features, depth=depth, n_labels=n_labels, normalization=normalization
+        self.unet = UNet(
+            in_channels=1,
+            out_classes=out_classes,
+            dimensions=3,
+            num_encoding_blocks=num_encoding_blocks,
+            out_channels_first_layer=out_channels_first_layer,
+            upsampling_type='conv',
+            padding=2,
+            activation='PReLU',
         )
         self.batch_size = batch_size
 
