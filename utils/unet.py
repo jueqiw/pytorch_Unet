@@ -24,7 +24,7 @@ class UNet(nn.Module):
             upsampling_type: str = 'conv',
             preactivation: bool = False,
             residual: bool = False,
-            padding: int = 32,
+            padding: int = 2,
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
             initial_dilation: Optional[int] = None,
@@ -56,10 +56,7 @@ class UNet(nn.Module):
         )
 
         in_channels = self.encoder.out_channels  # 32
-        # in_channels = 32
-        # print("last level in_channels:", in_channels)
         in_channels_skip_connection = in_channels  # 32
-        # print(f"decoder input {in_channels}")
 
         num_decoding_blocks = depth  # 3
         self.decoder = Decoder(  # 3 decoder level
@@ -92,15 +89,11 @@ class UNet(nn.Module):
             dimensions, in_channels, out_channels=1,
             kernel_size=1, activation=None,
             dropout=0,
-            # activation="Sigmoid"
         )
 
     def forward(self, x):
         skip_connections, encoding = self.encoder(x)
-        # encoding = self.bottom_block(encoding)
         x = self.decoder(skip_connections, encoding)
-        # if self.monte_carlo_layer is not None:
-        #     x = self.monte_carlo_layer(x)
         return self.classifier(x)
 
 
