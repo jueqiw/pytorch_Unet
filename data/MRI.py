@@ -61,13 +61,13 @@ class MRI:
                 self.img_path = os.path.join(patient_path, "sub-{}_ses-NFB3_T1w.nii.gz".format(self.file_name))
                 self.label_path = os.path.join(patient_path,
                                                "sub-{}_ses-NFB3_T1w_brainmask.nii.gz".format(self.file_name))
-            self.val_data = 0  # this dataset is all manual data, so all use as training
+
         elif self.dataset == ADNI_DATASET_DIR_1 or self.dataset == ADNI_DATASET_DIR_2:
             self.img_path = self.file_name
             label_file_name = str(self.file_name.name + '.gz')
             self.label_path = os.path.join(ADNI_DATASET_DIR_1, ADNI_LABEL, label_file_name)
-            # print(self.label_path, os.path.exists(self.label_path), sep='\n')
-            # print(self.img_path, os.path.exists(self.label_path), sep='\n')
+            if not (os.path.exists(self.img_path) and os.path.exists(self.label_path)):
+                self.flag = False
 
     def show_image_shape(self):
         """

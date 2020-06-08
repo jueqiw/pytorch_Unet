@@ -11,30 +11,30 @@ from torch import from_numpy
 from time import ctime
 import numpy as np
 
-
-def get_img(mri_list):
-    flag = False
-    img = ""
-    label = ""
-    for mri in mri_list:
-        try:
-            # in case some times found the file isnt exist like ".xxx" file
-            img = nib.load(mri.img_path).get_data().astype(np.float32)
-            label = nib.load(mri.img_path).get_data().squeeze().astype(np.float32)
-
-            img = resize(img, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
-            label = resize(label, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
-
-            if np.isnan(np.max(img)):
-                continue
-
-            if np.isinf(np.max(label)):
-                continue
-
-            yield from_numpy(img), from_numpy(label)
-        except OSError as e:
-            print("not such img file:", mri.img_path)
-            continue
+#
+# def get_img(mri_list):
+#     flag = False
+#     img = ""
+#     label = ""
+#     for mri in mri_list:
+#         try:
+#             # in case some times found the file isnt exist like ".xxx" file
+#             img = nib.load(mri.img_path).get_data().astype(np.float32)
+#             label = nib.load(mri.img_path).get_data().squeeze().astype(np.float32)
+#
+#             img = resize(img, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
+#             label = resize(label, output_shape=(SIZE, SIZE, SIZE), mode='constant', anti_aliasing=True)
+#
+#             if np.isnan(np.max(img)):
+#                 continue
+#
+#             if np.isinf(np.max(label)):
+#                 continue
+#
+#             yield from_numpy(img), from_numpy(label)
+#         except OSError as e:
+#             print("not such img file:", mri.img_path)
+#             continue
 
 
 def get_subjects(datasets):
@@ -44,16 +44,15 @@ def get_subjects(datasets):
     :return: list of subjects
     """
 
-    mri_list = [mri for mri in get_path(datasets)]
-    random.seed(42)
-    random.shuffle(mri_list)  # shuffle it to pick the val set
-
     subjects = [
         tio.Subject(
-                img=tio.Image(tensor=img, label=tio.INTENSITY),
-                label=tio.Image(tensor=label, label=tio.LABEL)
-            ) for img, label in get_img(mri_list)
+                img=tio.Image(path=mri.img_path, label=tio.INTENSITY),
+                label=tio.Image(path=mri.label_path, label=tio.LABEL)
+            ) for mri in get_path(datasets)
     ]
+
+    random.seed(42)
+    random.shuffle(subjects)  # shuffle it to pick the val set
 
     print(f"{ctime()}: getting number of subjects {len(subjects)}")
     return subjects
@@ -62,4 +61,6 @@ def get_subjects(datasets):
 if __name__ == '__main__':
     # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
     datasets = [CC359_DATASET_DIR]
-    get_subjects(datasets)
+
+    subjects = get_subjects(datasets)
+    print(f"get {len(subjects)} subjects!")

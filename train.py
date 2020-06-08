@@ -1,6 +1,7 @@
 import torch
 from torchio import AFFINE, DATA, PATH, TYPE, STEM
 from data.get_datasets import get_dataset
+from tqdm import tqdm
 from utils.unet import UNet, UNet3D
 from data.const import *
 from data.config import Option
@@ -16,10 +17,10 @@ from torch.nn import MultiLabelSoftMarginLoss
 from torch.utils.tensorboard import SummaryWriter
 from utils.matrixes import matrix
 import warnings
+warnings.filterwarnings("ignore")
 import torchio
 import numpy as np
 import logging
-logging.warning('Worrying Stuff')
 import sys
 import os
 
@@ -37,10 +38,12 @@ class Action(enum.Enum):
 
 def prepare_batch(batch, device):
     inputs = batch[img][DATA].to(device)
-    foreground = batch[label][DATA].to(device).squeeze()
+    foreground = batch[label][DATA].to(device)
     targets = torch.zeros_like(foreground).to(device)
     targets[foreground > 0.5] = 1
-    return inputs, targets.float()
+    inputs = F.interpolate(inputs, (128, 128, 128))
+    targets = F.interpolate(targets, (128, 128, 128))
+    return inputs, targets
 
 
 def forward(model, inputs):
@@ -77,7 +80,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
         i += 1
         inputs, targets = prepare_batch(batch, device)
         optimizer.zero_grad()
-        with torch.set_grad_enabled(is_training): #
+        with torch.set_grad_enabled(is_training):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
             iou, dice = matrix(probabilities, targets)
@@ -127,8 +130,9 @@ if __name__ == "__main__":
     CHANNELS_DIMENSION = 1
     SPATIAL_DIMENSIONS = 2, 3, 4
 
-    datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
+    # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
     # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR]
+    datasets = [ADNI_DATASET_DIR_1]
     training_set, validation_set = get_dataset(datasets)
 
     # Pytorch's DataLoader is responsible for managing batches. You can create a DataLoader from any Dataset.

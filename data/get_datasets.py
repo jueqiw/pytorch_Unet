@@ -17,6 +17,7 @@ from torchio.transforms import (
     Pad,
     Compose,
 )
+from .squeeze import ToSqueeze
 
 
 def get_dataset(datasets):
@@ -25,6 +26,7 @@ def get_dataset(datasets):
     subjects = get_subjects(datasets)
 
     training_transform = Compose([
+        ToSqueeze(),
         RescaleIntensity((0, 1)),  # so that there are no negative values for RandomMotion
         RandomMotion(),
         # HistogramStandardization(landmarks_dict={MRI: landmarks}),
