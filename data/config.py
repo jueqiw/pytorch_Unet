@@ -7,9 +7,9 @@ class Option():
         self.parser.add_argument('--data_dir', type=str, default='', help='the path of the dataset')
         self.parser.add_argument('-e', '--epochs', metavar='E', type=int, default=10000,
                                  help='Number of epochs', dest='epochs')
-        self.parser.add_argument('-b', '--batch-size', metavar='B', type=int, nargs='?', default=2,
+        self.parser.add_argument('-b', '--batch-size', metavar='B', type=int, nargs='?', default=1,
                                  help='Batch size', dest='batchsize')
-        self.parser.add_argument('-l', '--learning-rate', metavar='LR', type=float, nargs='?', default=0.1,
+        self.parser.add_argument('-l', '--learning-rate', metavar='LR', type=float, nargs='?', default=1e-3,
                                  help='Learning rate', dest='lr')
         self.parser.add_argument('-f', '--load', dest='load', type=str, default=False,
                                  help='Load model from a .pth file')

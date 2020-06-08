@@ -9,7 +9,6 @@
 
 module load python/3.6
 source /home/$USER/tensorflow/bin/activate && echo "$(date +"%T"):  Activated python virtualenv"
-pip install pytorch-lightning && echo "$(date +"%T"):  install pytorch-lightning"
 
 echo -e '\n\n\n'
 cd $SLURM_TMPDIR

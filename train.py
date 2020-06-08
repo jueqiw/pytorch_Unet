@@ -12,7 +12,7 @@ import nibabel as nib
 from time import ctime
 from torchvision.utils import make_grid, save_image
 import torch.nn.functional as F
-# from torch.nn import BCEWithLogitsLoss
+from torch.nn import BCEWithLogitsLoss
 from torch.nn import MultiLabelSoftMarginLoss
 from torch.utils.tensorboard import SummaryWriter
 from utils.matrixes import matrix
@@ -39,11 +39,11 @@ class Action(enum.Enum):
 def prepare_batch(batch, device):
     inputs = batch[img][DATA].to(device)
     foreground = batch[label][DATA].to(device)
-    targets = torch.zeros_like(foreground).to(device)
-    targets[foreground > 0.5] = 1
-    inputs = F.interpolate(inputs, (128, 128, 128))
-    targets = F.interpolate(targets, (128, 128, 128))
-    return inputs, targets
+    # targets = torch.zeros_like(foreground).to(device)
+    # targets[foreground > 0.5] = 1
+    # inputs = F.interpolate(inputs, (128, 128, 128))
+    # targets = F.interpolate(targets, (128, 128, 128))
+    return inputs, foreground
 
 
 def forward(model, inputs):
@@ -72,7 +72,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
     is_training = action == Action.TRAIN
     epoch_losses = []
     model.train(is_training)
-    loss_f_mean = MultiLabelSoftMarginLoss()
+    # loss_f_mean = MultiLabelSoftMarginLoss()
     ious = []
     dices = []
     i = 0
@@ -84,7 +84,7 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
             iou, dice = matrix(probabilities, targets)
-            batch_loss = loss_f_mean(logits, targets)
+            batch_loss = F.binary_cross_entropy_with_logits(logits, targets)
             ious.append(iou)
             dices.append(dice)
             if is_training:
@@ -130,9 +130,11 @@ if __name__ == "__main__":
     CHANNELS_DIMENSION = 1
     SPATIAL_DIMENSIONS = 2, 3, 4
 
-    datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
+    if COMPUTECANADA:
+        datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
+    else:
     # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR]
-    # datasets = [ADNI_DATASET_DIR_1]
+        datasets = [ADNI_DATASET_DIR_1]
     training_set, validation_set = get_dataset(datasets)
 
     # Pytorch's DataLoader is responsible for managing batches. You can create a DataLoader from any Dataset.

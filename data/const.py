@@ -30,9 +30,9 @@ else:
 # for file in os.listdir(DATA_ROOT):
 #     print(file)
 
-    CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
-    CC359_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//STAPLE"
-    CC359_MANUAL_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//Manual"
+CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
+CC359_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//STAPLE"
+CC359_MANUAL_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//Manual"
 
 
 NFBS_DATASET_DIR = DATA_ROOT / "NFBS//NFBS_Dataset"
