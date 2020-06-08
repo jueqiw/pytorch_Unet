@@ -16,6 +16,7 @@ from torch.nn import BCEWithLogitsLoss
 from torch.nn import MultiLabelSoftMarginLoss
 from torch.utils.tensorboard import SummaryWriter
 from utils.matrixes import matrix
+from utils.loss import get_dice_score
 import warnings
 warnings.filterwarnings("ignore")
 import torchio
@@ -41,8 +42,8 @@ def prepare_batch(batch, device):
     foreground = batch[label][DATA].to(device)
     # targets = torch.zeros_like(foreground).to(device)
     # targets[foreground > 0.5] = 1
-    # inputs = F.interpolate(inputs, (128, 128, 128))
-    # targets = F.interpolate(targets, (128, 128, 128))
+    inputs = F.interpolate(inputs, (128, 128, 128))
+    foreground = F.interpolate(foreground, (128, 128, 128))
     return inputs, foreground
 
 
@@ -56,7 +57,7 @@ def forward(model, inputs):
 def get_model_and_optimizer(device):
     model = UNet(
         in_channels=1,
-        out_classes=2,
+        out_classes=1,
         dimensions=3,
         num_encoding_blocks=3,
         out_channels_first_layer=8,
@@ -83,10 +84,10 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
         with torch.set_grad_enabled(is_training):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
-            iou, dice = matrix(probabilities, targets)
+            dice, iou = get_dice_score(probabilities, targets)
             batch_loss = F.binary_cross_entropy_with_logits(logits, targets)
-            ious.append(iou)
-            dices.append(dice)
+            ious.append(iou.item())
+            dices.append(dice.item())
             if is_training:
                 batch_loss.backward()
                 optimizer.step()

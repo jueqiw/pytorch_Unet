@@ -31,7 +31,6 @@ def get_dataset(datasets):
         RandomMotion(),
         # HistogramStandardization(landmarks_dict={MRI: landmarks}),
         RandomBiasField(),
-        ZNormalization(masking_method=ZNormalization.mean),
         RandomNoise(),
         ToCanonical(),
         # CropOrPad((128, 128, 128)),  # do not know what it do
@@ -43,11 +42,7 @@ def get_dataset(datasets):
     ])
 
     validation_transform = Compose([
-        # HistogramStandardization(landmarks_dict={MRI: landmarks}),
-        ZNormalization(masking_method=ZNormalization.mean),
         ToCanonical(),
-        # CropOrPad((128, 128, 128)),
-        # Resample((4, 4, 4)),
     ])
 
     num_subjects = len(subjects)

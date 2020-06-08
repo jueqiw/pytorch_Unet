@@ -15,8 +15,10 @@ def get_dice_score(output, target, epsilon=1e-9):
     num = 2 * tp
     denom = 2 * tp + fp + fn + epsilon
     dice_score = num / denom
-    return dice_score
+    iou_score = (tp + epsilon) / (tp + fp + fn)
+    return dice_score, iou_score
 
 
 def get_dice_loss(output, target):
-    return 1 - get_dice_score(output, target)
+    dice_score, iou = get_dice_loss(output, target)
+    return 1 - dice_score

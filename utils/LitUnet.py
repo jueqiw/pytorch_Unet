@@ -9,19 +9,20 @@ class LitUnet(pl.LightningModule):
     def __init__(
             self,
             out_channels_first_layer: int = 8,
-            out_classes: int = 2,
+            out_classes: int = 1,  # also the number of labels
+            dimensions: int = 3,
             num_encoding_blocks: int = 3,
-            n_labels: int = 2,
-            normalization: bool = True,
+            normalization: bool = False,
             batch_size: int = 1,
     ):
         super().__init__()
         self.unet = UNet(
             in_channels=1,
             out_classes=out_classes,
-            dimensions=3,
+            dimensions=dimensions,
             num_encoding_blocks=num_encoding_blocks,
             out_channels_first_layer=out_channels_first_layer,
+            normalization=normalization,
             upsampling_type='conv',
             padding=2,
             activation='PReLU',
