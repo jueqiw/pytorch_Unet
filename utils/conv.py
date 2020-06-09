@@ -8,8 +8,8 @@ class ConvolutionalBlock(nn.Module):
             self,
             dimensions: int,
             in_channels: int,
-            out_channels: int,  # 8
-            # normalization: Optional[str] = None,
+            out_channels: int,
+            normalization: Optional[str] = None,
             kernel_size: int = 5,
             activation: Optional[str] = 'ReLU',
             # preactivation: bool = False,
@@ -17,7 +17,6 @@ class ConvolutionalBlock(nn.Module):
             padding_mode: str = 'zeros',
             dilation: Optional[int] = None,
             dropout: float = 0.3,
-            max_pooling: bool = True,
             ):
         super().__init__()
 
@@ -39,13 +38,15 @@ class ConvolutionalBlock(nn.Module):
             # dilation=dilation,
         )
 
-        # norm_layer = None
-        # if normalization is not None:  # make it always none, only use dropout
-        #     class_name = '{}Norm{}d'.format(
-        #         normalization.capitalize(), dimensions)
-        #     norm_class = getattr(nn, class_name)
-        #     num_features = in_channels if preactivation else out_channels
-        #     norm_layer = norm_class(num_features)
+        norm_layer = None
+        if normalization is not None:
+            # class_name = '{}Norm{}d'.format(
+            #     normalization.capitalize(), dimensions)
+            class_name = '{}Norm'.format(
+                normalization.capitalize())
+            norm_class = getattr(nn, class_name)
+            # num_features = in_channels if preactivation else out_channels
+            norm_layer = norm_class(num_groups=1, num_channels=out_channels)
 
         activation_layer = None
         if activation is not None:
@@ -57,7 +58,7 @@ class ConvolutionalBlock(nn.Module):
         #     self.add_if_not_none(block, conv_layer)
         # else:
         self.add_if_not_none(block, conv_layer)
-        # self.add_if_not_none(block, norm_layer)
+        self.add_if_not_none(block, norm_layer)
         self.add_if_not_none(block, activation_layer)
 
         dropout_layer = None
@@ -68,9 +69,9 @@ class ConvolutionalBlock(nn.Module):
             self.add_if_not_none(block, dropout_layer)
 
         self.conv_layer = conv_layer
-        # self.norm_layer = norm_layer
+        self.norm_layer = norm_layer
         self.activation_layer = activation_layer
-        self.dropout_layer = dropout_layer
+        # self.dropout_layer = dropout_layer
 
         # A Sequential object runs each of the modules contained within it, in a sequential manner. This is a simpler
         # way of writing our neural network.

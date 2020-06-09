@@ -58,11 +58,13 @@ def get_model_and_optimizer(device):
         in_channels=1,
         out_classes=1,
         dimensions=3,
+        normalization='Group',
         num_encoding_blocks=3,
         out_channels_first_layer=8,
         upsampling_type='conv',
         padding=2,
         activation='PReLU',
+        dropout=0,
     ).to(device)
     optimizer = torch.optim.AdamW(model.parameters())
     return model, optimizer

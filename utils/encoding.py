@@ -11,7 +11,7 @@ class Encoder(nn.Module):
             dimensions: int,
             pooling_type: str,
             num_encoding_blocks: int,
-            # normalization: Optional[str],
+            normalization: Optional[str],
             # preactivation: bool = False,
             # residual: bool = False,
             padding: int = 2,
@@ -19,7 +19,7 @@ class Encoder(nn.Module):
             activation: Optional[str] = 'ReLU',
             # initial_dilation: Optional[int] = None,
             dropout: float = 0.3,
-            ):
+    ):
         super().__init__()
 
         self.encoding_blocks = nn.ModuleList()
@@ -30,7 +30,7 @@ class Encoder(nn.Module):
                 in_channels,
                 out_channels_first,
                 dimensions,
-                # normalization,
+                normalization,
                 pooling_type,
                 # preactivation,
                 is_first_block=is_first_block,
@@ -58,7 +58,6 @@ class Encoder(nn.Module):
         skip_connections = []
         for encoding_block in self.encoding_blocks:
             x, skip_connnection = encoding_block(x)
-            # print(x.shape, skip_connnection.shape)
             skip_connections.append(skip_connnection)
         return skip_connections, x
 
@@ -73,7 +72,7 @@ class EncodingBlock(nn.Module):
             in_channels: int,
             out_channels_first: int,
             dimensions: int,
-            # normalization: Optional[str],
+            normalization: Optional[str],
             pooling_type: str = None,
             # preactivation: bool = False,
             is_first_block: bool = False,
@@ -83,7 +82,7 @@ class EncodingBlock(nn.Module):
             activation: Optional[str] = 'ReLU',
             # dilation: Optional[int] = None,
             dropout: float = 0.3,
-            ):
+    ):
         super().__init__()
 
         # self.preactivation = preactivation
@@ -91,39 +90,38 @@ class EncodingBlock(nn.Module):
 
         # self.residual = residual
 
-        if is_first_block:
-            normalization = None
-            # preactivation = None
-        else:
-            # normalization = self.normalization
-            normalization = None
-            # preactivation = self.preactivation
+        # if is_first_block:
+        # normalization = None
+        # preactivation = None
+        # else:
+        # normalization = self.normalization
+        # normalization = None
+        # preactivation = self.preactivation
 
         self.conv1 = ConvolutionalBlock(
             dimensions,
             in_channels,
             out_channels_first,
-            # normalization=normalization,
+            normalization=normalization,
             # preactivation=preactivation,
             padding=2,
             padding_mode=padding_mode,
             activation=activation,
             # dilation=dilation,
-            dropout=0,
+            dropout=dropout,
         )
 
         out_channels_second = out_channels_first
         if dimensions == 2:
             out_channels_second = out_channels_first
         elif dimensions == 3:
-            # out_channels_second = 2 * out_channels_first
             out_channels_second = out_channels_first
 
         self.conv2 = ConvolutionalBlock(
             dimensions,
             out_channels_first,
             out_channels_second,
-            # normalization=self.normalization,
+            normalization=normalization,
             # preactivation=self.preactivation,
             padding=2,
             activation=activation,
@@ -144,7 +142,7 @@ class EncodingBlock(nn.Module):
         else:
             skip_connection = x
             x = self.downsample(x)
-            # print(x.shape)
+
         return x, skip_connection
 
     @property
@@ -157,7 +155,7 @@ def get_downsampling_layer(
         pooling_type: str,
         kernel_size: int = 2,
         stride: int = 2,
-        ) -> nn.Module:
+) -> nn.Module:
     class_name = '{}Pool{}d'.format(pooling_type.capitalize(), dimensions)
     class_ = getattr(nn, class_name)
     return class_(kernel_size)

@@ -4,7 +4,7 @@ import os
 
 SIZE = 128
 LEARN_RATE = 0.001
-COMPUTECANADA = False
+COMPUTECANADA = True
 
 # DATASET_DIR = "/project/6005889/U-Net_MRI-Data"
 #

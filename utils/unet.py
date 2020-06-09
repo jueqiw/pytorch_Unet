@@ -19,7 +19,7 @@ class UNet(nn.Module):
             dimensions: int = 2,
             num_encoding_blocks: int = 3,
             out_channels_first_layer: int = 8,
-            normalization: Optional[str] = None,
+            normalization: Optional[str] = 'Group',
             pooling_type: str = 'max',
             upsampling_type: str = 'conv',
             preactivation: bool = False,
@@ -45,10 +45,10 @@ class UNet(nn.Module):
             dimensions,
             pooling_type,
             depth,
-            # normalization,
+            normalization,
             # preactivation=preactivation,
             # residual=residual,
-            padding=2,
+            padding=padding,
             padding_mode=padding_mode,
             activation=activation,
             # initial_dilation=initial_dilation,
@@ -58,13 +58,13 @@ class UNet(nn.Module):
         in_channels = self.encoder.out_channels  # 32
         in_channels_skip_connection = in_channels  # 32
 
-        num_decoding_blocks = depth  # 3
-        self.decoder = Decoder(  # 3 decoder level
+        num_decoding_blocks = depth
+        self.decoder = Decoder(
             in_channels_skip_connection,
             dimensions,
             upsampling_type="conv",
             num_decoding_blocks=num_decoding_blocks,
-            # normalization=normalization,
+            normalization=normalization,
             # preactivation=preactivation,
             residual=residual,
             padding=2,
