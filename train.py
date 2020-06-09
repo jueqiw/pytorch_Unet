@@ -41,8 +41,8 @@ def prepare_batch(batch, device):
     foreground = batch[label][DATA].to(device)
     # targets = torch.zeros_like(foreground).to(device)
     # targets[foreground > 0.5] = 1
-    inputs = F.interpolate(inputs, (128, 128, 128))
-    foreground = F.interpolate(foreground, (128, 128, 128))
+    inputs = F.interpolate(inputs, (64, 64, 64))
+    foreground = F.interpolate(foreground, (64, 64, 64))
     return inputs, foreground
 
 
