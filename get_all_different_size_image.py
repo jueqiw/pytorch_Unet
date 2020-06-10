@@ -1,8 +1,8 @@
 import os
 import nibabel as nib
 from pathlib import Path
-from .data.const import *
-from .data.get_path import get_path
+from data.const import *
+from data.get_path import get_path
 
 
 def get_all_different_size_image():
