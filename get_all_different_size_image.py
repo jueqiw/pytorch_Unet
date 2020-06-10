@@ -12,7 +12,7 @@ def get_all_different_size_image():
         print(mri.label_path)
         img = nib.load(mri.img_path)
 
-        dims = list(img.shape)
+        dims = list(map(str, img.shape))
         dims = ','.join(dims)
 
         i = 1
