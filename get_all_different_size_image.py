@@ -23,4 +23,7 @@ def get_all_different_size_image():
             os.system(f"cp {mri.label_path} /project/6005889/U-Net_MRI-Data/all_different_size_img/label")
 
 
+if __name__ == "__main__":
+    get_all_different_size_image()
+
 
