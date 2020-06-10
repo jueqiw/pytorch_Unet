@@ -30,17 +30,17 @@ else:
 # for file in os.listdir(DATA_ROOT):
 #     print(file)
 
-CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
-CC359_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//STAPLE"
-CC359_MANUAL_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//Manual"
-
-NFBS_DATASET_DIR = DATA_ROOT / "NFBS//NFBS_Dataset"
-
-ADNI_DATASET_DIR_1 = DATA_ROOT / "ADNI"
-ADNI_DATASET_DIR_2 = DATA_ROOT / "ADNI/ADNI"
-
-if COMPUTECANADA:
-    ADNI_LABEL = ADNI_DATASET_DIR_1 / "brain_extraction"
-else:
-    ADNI_LABEL = DATA_ROOT / "pincram_bin_brain_masks_5074//pincram_bin_brain_masks_5074"
+# CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
+# CC359_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//STAPLE"
+# CC359_MANUAL_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//Manual"
+#
+# NFBS_DATASET_DIR = DATA_ROOT / "NFBS//NFBS_Dataset"
+#
+# ADNI_DATASET_DIR_1 = DATA_ROOT / "ADNI"
+# ADNI_DATASET_DIR_2 = DATA_ROOT / "ADNI/ADNI"
+#
+# if COMPUTECANADA:
+#     ADNI_LABEL = ADNI_DATASET_DIR_1 / "brain_extraction"
+# else:
+#     ADNI_LABEL = DATA_ROOT / "pincram_bin_brain_masks_5074//pincram_bin_brain_masks_5074"
 
