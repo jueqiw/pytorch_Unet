@@ -15,6 +15,8 @@ class Option():
                                  help='Load model from a .pth file')
         self.parser.add_argument('-r', '--run', dest='run', type=int, default=1,
                                  help='run times')
+        self.parser.add_argument('-p', '--show-plot', dest='plots', type=bool, default=True,
+                                 help='whether to plot the figure')
         # self.parser.add_argument('-v', '--validation', dest='val', type=float, default=10.0,
         #                          help='Percent of the data that is used as validation (0-100)')
 

@@ -26,26 +26,3 @@ def get_model_and_optimizer(device):
 device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
 model, optimizer = get_model_and_optimizer(device)
 print(model)
-# model(torch.tensor((1, 128, 128, 128)))
-# summary(model, (1, 128, 128, 128))
-
-# datasets = [ADNI_DATASET_DIR_1]
-#
-# t, v = get_dataset(datasets)
-#
-# training_loader = torch.utils.data.DataLoader(
-#         t,
-#         batch_size=5,
-#         shuffle=True,
-#         num_workers=multiprocessing.cpu_count(),
-#     )
-#
-# validation_loader = torch.utils.data.DataLoader(
-#     v,
-#     batch_size=5,
-#     num_workers=multiprocessing.cpu_count(),
-# )
-
-
-
-

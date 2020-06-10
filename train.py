@@ -1,10 +1,11 @@
 import torch
 from torchio import DATA
 from data.get_datasets import get_dataset
-from tqdm import tqdm
 from utils.unet import UNet, UNet3D
 from data.const import *
 from data.config import Option
+from pathlib import Path
+from postprocess.visualize import BrainSlices
 import enum
 import SimpleITK as sitk
 import multiprocessing
@@ -29,7 +30,8 @@ import os
 img = "img"
 label = "label"
 dir_checkpoint = 'checkpoint/'
-
+option = Option()
+args = option.parse()
 
 class Action(enum.Enum):
     TRAIN = 'Training'
@@ -86,6 +88,9 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
             dice, iou = get_dice_score(probabilities, targets)
+            if int(batch_idx) != 0 and args.plots and int(batch_idx) % 15 == 0:
+                slices = BrainSlices(inputs, targets, logits)
+                slices.visualize(int(batch_idx), epoch_idx, outdir=Path(__file__).resolve().parent / "log" / "plot")
             batch_loss = F.binary_cross_entropy_with_logits(logits, targets)
             ious.append(iou.item())
             dices.append(dice.item())
@@ -93,8 +98,8 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
                 batch_loss.backward()
                 optimizer.step()
             epoch_losses.append(batch_loss.item())
-            print(
-                f'{ctime()}: Epoch: {epoch_idx} Batch: {batch_idx}| {action.value} mean loss: {batch_loss.item():0.5f} | iou: {iou.item():0.5f} | dices : {dice.item():0.5f}')
+            print(f'{ctime()}: Epoch: {epoch_idx} Batch: {batch_idx}| {action.value} mean loss: {batch_loss.item():0.5f} | iou: {iou.item():0.5f} | dices : {dice.item():0.5f}')
+
     epoch_losses = np.array(epoch_losses)
     ious = np.array(ious)
     dices = np.array(dices)
@@ -119,16 +124,16 @@ def train(num_epochs, training_loader, validation_loader, model, optimizer, min_
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-    option = Option()
-    args = option.parse()
 
-    if not os.path.exists('./summary'):
-        os.mkdir('summary')
-    if not os.path.exists('./checkpoint'):
-        os.mkdir('checkpoint')
+    if not os.path.exists('./log'):
+        os.mkdir('log')
+    if not os.path.exists('./log/summary'):
+        os.mkdir('./log/summary')
+    if not os.path.exists('./log/checkpoint'):
+        os.mkdir('./logcheckpoint')
 
     # default `log_dir` is "runs" - we'll be more specific here
-    writer = SummaryWriter('summary/Unet')
+    writer = SummaryWriter('./log/summary/Unet')
 
     device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
     logging.info(f'Using device {device}')
