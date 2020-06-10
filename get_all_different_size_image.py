@@ -9,6 +9,7 @@ def get_all_different_size_image():
     datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
     sizes = set()
     for mri in get_path(datasets):
+        print(mri.label_path)
         img = nib.load(mri.img_path)
 
         dims = list(img.shape)
