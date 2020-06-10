@@ -89,9 +89,6 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
             dice, iou = get_dice_score(probabilities, targets)
-            imgs = [inputs, logits, targets]
-            for i, t in enumerate(imgs):
-                print(f"{i}: {torch.max(t)} {torch.min(t)}")
             if int(batch_idx) != 0 and args.plots and int(batch_idx) % 15 == 0:
                 slices = BrainSlices(inputs, targets, logits)
                 slices.visualize(int(batch_idx), epoch_idx, outdir=Path(__file__).resolve().parent / "log" / "plot")
@@ -105,24 +102,24 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
             print(f'{ctime()}: Epoch: {epoch_idx} Batch: {batch_idx}| {action.value} loss: {batch_loss.item():0.5f} | iou: {iou.item():0.5f} | dices : {dice.item():0.5f}')
             # if action.value == Action.TRAIN and batch_loss.item() < min_loss:
             if is_training and batch_loss.item() < min_loss:
-                os.system(f"del ./log/checkpoint/Epoch_{epoch_idx}_loss_{min_loss:0.3}.pth")
-                min_loss = epoch_losses
-                torch.save(model.state_dict(), f'./log/checkpoint/Epoch_{epoch_idx}_loss_{min_loss:0.3}.pth')
+                if os.path.exists(f"./log/checkpoint/Epoch_{epoch_idx}_loss_{min_loss:0.3}.pth"):
+                    os.system(f"del ./log/checkpoint/Epoch_{epoch_idx}_loss_{min_loss:0.3}.pth")
+                min_loss = batch_loss.item()
+                torch.save(model.state_dict(), f'./log/checkpoint/Epoch_{min_loss}_loss_{min_loss:0.3}.pth')
                 logging.info(f'{ctime()} :Saved model!')
     epoch_losses = np.array(epoch_losses)
     ious = np.array(ious)
     dices = np.array(dices)
     print(f'{ctime()}: Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.5f} | iou: {ious.mean():0.5f} | dices : {dices.mean():0.5f}')
     if not is_training and epoch_losses.mean() < min_loss:
-        min_loss = epoch_losses
+        min_loss = epoch_losses.item()
         print("Yes")
-        torch.save(model.state_dict(), f'./checkpoint/Epoch_{epoch_idx}_loss_{min_loss}.pth')
+        torch.save(model.state_dict(), f'./checkpoint/Epoch_{epoch_idx}_loss_{min_loss:0.3f}.pth')
         logging.info(f'{ctime()} :Saved model')
     return epoch_losses.mean(), min_loss
 
 
 def train(num_epochs, training_loader, validation_loader, model, optimizer, min_loss, writer):
-    min_loss = 1000000
     for epoch_idx in range(1, num_epochs + 1):
         print('Starting epoch', epoch_idx)
         loss, min_loss = run_epoch(epoch_idx, Action.TRAIN, training_loader, model, optimizer, min_loss, writer)
@@ -185,7 +182,7 @@ if __name__ == "__main__":
         )
         logging.info(f'Model loaded from {args.load}')
     model.to(device=device)
-    min_loss = 100000
+    min_loss = 100000.0
 
     try:
         train(
