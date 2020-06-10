@@ -129,7 +129,7 @@ class BrainSlices:
 
         # Consistently apply colormap since images are standardized but still
         # vary considerably in maximum and minimum values
-        true_args = dict(vmin=0.0, vmax=5.0, cmap="gray")
+        true_args = dict(vmin=-1.0, vmax=1.5, cmap="gray")
         mask_args = dict(vmin=0.0, vmax=1.0, cmap="gray", alpha=0.5)
 
         axes[0].imshow(true, **true_args)

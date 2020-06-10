@@ -48,8 +48,8 @@ class MRI:
                 if name not in MRI.cc359_manual:
                     self.label_path = CC359_LABEL_DIR / "{}_staple.nii.gz".format(name)
                 else:
+                    # use the manual data to get more precise
                     self.label_path = CC359_MANUAL_LABEL_DIR / "{}_manual.nii.gz".format(name)
-                    self.val_data = 0  # make all manual data as train data
             else:
                 self.flag = False
                 print("cant identify this file:", self.file_name)

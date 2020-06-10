@@ -11,7 +11,8 @@ from torch import from_numpy
 from time import ctime
 import numpy as np
 
-#
+# if really put all the tensor into the [subjects], it would run into memory error sometimes...
+# How could I have this "bright" idea
 # def get_img(mri_list):
 #     flag = False
 #     img = ""
@@ -47,7 +48,9 @@ def get_subjects(datasets):
     subjects = [
         tio.Subject(
                 img=tio.Image(path=mri.img_path, label=tio.INTENSITY),
-                label=tio.Image(path=mri.label_path, label=tio.LABEL)
+                label=tio.Image(path=mri.label_path, label=tio.LABEL),
+                # store the dataset name to help plot the image later
+                # dataset=mri.dataset
             ) for mri in get_path(datasets)
     ]
 

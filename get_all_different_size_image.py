@@ -18,8 +18,8 @@ def get_all_different_size_image():
         if dims not in sizes:
             sizes.add(dims)
             print(f"find {i}")
-            os.system(f"cp {mri.img_path} /project/6005889/U-Net_MRI-Data/all_different_size_img")
-            os.system(f"cp {mri.label_path} /project/6005889/U-Net_MRI-Data/all_different_size_img")
+            os.system(f"cp {mri.img_path} /project/6005889/U-Net_MRI-Data/all_different_size_img/img")
+            os.system(f"cp {mri.label_path} /project/6005889/U-Net_MRI-Data/all_different_size_img/label")
 
 
 

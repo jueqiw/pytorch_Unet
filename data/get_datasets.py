@@ -28,8 +28,7 @@ def get_dataset(datasets):
     training_transform = Compose([
         ToSqueeze(),
         ToCanonical(),
-        ZNormalization(masking_method=None, p=1),
-        RandomAffine(image_interpolation="linear", p=0.8),  # default, compromise on speed + quality
+        ZNormalization(masking_method=ZNormalization.mean),  # Subtract mean and divide by standard deviation.
         RescaleIntensity((0, 1)),  # so that there are no negative values for RandomMotion
         RandomMotion(),
         # HistogramStandardization(landmarks_dict={MRI: landmarks}),
@@ -44,6 +43,7 @@ def get_dataset(datasets):
     ])
 
     validation_transform = Compose([
+        ZNormalization(masking_method=ZNormalization.mean),
         ToCanonical(),
     ])
 

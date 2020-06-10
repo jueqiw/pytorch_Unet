@@ -25,7 +25,6 @@ import logging
 import sys
 import os
 
-
 # those words used when building the dataset subject
 img = "img"
 label = "label"
@@ -41,10 +40,12 @@ class Action(enum.Enum):
 def prepare_batch(batch, device):
     inputs = batch[img][DATA].to(device)
     foreground = batch[label][DATA].to(device)
+    # dataset = batch["dataset"]
     # targets = torch.zeros_like(foreground).to(device)
     # targets[foreground > 0.5] = 1
     inputs = F.interpolate(inputs, (64, 64, 64))
     foreground = F.interpolate(foreground, (64, 64, 64))
+    # print(dataset)
     return inputs, foreground
 
 
@@ -88,6 +89,9 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
             logits = forward(model, inputs)
             probabilities = torch.sigmoid(logits)
             dice, iou = get_dice_score(probabilities, targets)
+            imgs = [inputs, logits, targets]
+            for i, t in enumerate(imgs):
+                print(f"{i}: {torch.max(t)} {torch.min(t)}")
             if int(batch_idx) != 0 and args.plots and int(batch_idx) % 15 == 0:
                 slices = BrainSlices(inputs, targets, logits)
                 slices.visualize(int(batch_idx), epoch_idx, outdir=Path(__file__).resolve().parent / "log" / "plot")
@@ -98,14 +102,20 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
                 batch_loss.backward()
                 optimizer.step()
             epoch_losses.append(batch_loss.item())
-            print(f'{ctime()}: Epoch: {epoch_idx} Batch: {batch_idx}| {action.value} mean loss: {batch_loss.item():0.5f} | iou: {iou.item():0.5f} | dices : {dice.item():0.5f}')
-
+            print(f'{ctime()}: Epoch: {epoch_idx} Batch: {batch_idx}| {action.value} loss: {batch_loss.item():0.5f} | iou: {iou.item():0.5f} | dices : {dice.item():0.5f}')
+            # if action.value == Action.TRAIN and batch_loss.item() < min_loss:
+            if is_training and batch_loss.item() < min_loss:
+                os.system(f"del ./log/checkpoint/Epoch_{epoch_idx}_loss_{min_loss:0.3}.pth")
+                min_loss = epoch_losses
+                torch.save(model.state_dict(), f'./log/checkpoint/Epoch_{epoch_idx}_loss_{min_loss:0.3}.pth')
+                logging.info(f'{ctime()} :Saved model!')
     epoch_losses = np.array(epoch_losses)
     ious = np.array(ious)
     dices = np.array(dices)
     print(f'{ctime()}: Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.5f} | iou: {ious.mean():0.5f} | dices : {dices.mean():0.5f}')
-    if action.value == Action.VALIDATE and epoch_losses.mean() < min_loss:
+    if not is_training and epoch_losses.mean() < min_loss:
         min_loss = epoch_losses
+        print("Yes")
         torch.save(model.state_dict(), f'./checkpoint/Epoch_{epoch_idx}_loss_{min_loss}.pth')
         logging.info(f'{ctime()} :Saved model')
     return epoch_losses.mean(), min_loss

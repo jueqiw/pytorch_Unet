@@ -21,15 +21,15 @@ ADNI_LABEL = "brain_extraction"
 
 opt = Option()
 
-if COMPUTECANADA:
-    DATA_ROOT = Path(opt.parse().data_dir) / "work"
-else:
-    DATA_ROOT = Path(__file__).resolve().parent.parent.parent / "Data"
-# DATA_ROOT = Path(opt.parse().data_dir)
-
-# for file in os.listdir(DATA_ROOT):
-#     print(file)
-
+# if COMPUTECANADA:
+#     DATA_ROOT = Path(opt.parse().data_dir) / "work"
+# else:
+#     DATA_ROOT = Path(__file__).resolve().parent.parent.parent / "Data"
+#
+#
+# # for file in os.listdir(DATA_ROOT):
+# #     print(file)
+#
 # CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
 # CC359_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//STAPLE"
 # CC359_MANUAL_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//Manual"
