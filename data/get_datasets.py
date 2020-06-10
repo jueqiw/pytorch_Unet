@@ -27,12 +27,14 @@ def get_dataset(datasets):
 
     training_transform = Compose([
         ToSqueeze(),
+        ToCanonical(),
+        ZNormalization(masking_method=None, p=1),
+        RandomAffine(image_interpolation="linear", p=0.8),  # default, compromise on speed + quality
         RescaleIntensity((0, 1)),  # so that there are no negative values for RandomMotion
         RandomMotion(),
         # HistogramStandardization(landmarks_dict={MRI: landmarks}),
         RandomBiasField(),
         RandomNoise(),
-        ToCanonical(),
         # CropOrPad((128, 128, 128)),  # do not know what it do
         RandomFlip(axes=(0,)),
         OneOf({

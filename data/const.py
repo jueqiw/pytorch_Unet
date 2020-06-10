@@ -6,18 +6,18 @@ SIZE = 128
 LEARN_RATE = 0.001
 COMPUTECANADA = True
 
-# DATASET_DIR = "/project/6005889/U-Net_MRI-Data"
-#
-# CC359_DATASET_DIR = "CalgaryCampinas359/Original"
-# CC359_LABEL_DIR = "CalgaryCampinas359/Skull-stripping-masks/STAPLE"
-# CC359_MANUAL_LABEL_DIR = "CalgaryCampinas359/Skull-stripping-masks/Manual"
-#
-# NFBS_DATASET_DIR = "NFBS/NFBS_Dataset"
-#
-# ADNI_DATASET_DIR_1 = "/project/6005889/U-Net_MRI-Data/ADNI"
-# ADNI_DATASET_DIR_2 = "/project/6005889/U-Net_MRI-Data/ADNI/ADNI"
-#
-# ADNI_LABEL = "brain_extraction"
+DATASET_DIR = "/project/6005889/U-Net_MRI-Data"
+
+CC359_DATASET_DIR = "CalgaryCampinas359/Original"
+CC359_LABEL_DIR = "CalgaryCampinas359/Skull-stripping-masks/STAPLE"
+CC359_MANUAL_LABEL_DIR = "CalgaryCampinas359/Skull-stripping-masks/Manual"
+
+NFBS_DATASET_DIR = "NFBS/NFBS_Dataset"
+
+ADNI_DATASET_DIR_1 = "/project/6005889/U-Net_MRI-Data/ADNI"
+ADNI_DATASET_DIR_2 = "/project/6005889/U-Net_MRI-Data/ADNI/ADNI"
+
+ADNI_LABEL = "brain_extraction"
 
 opt = Option()
 
