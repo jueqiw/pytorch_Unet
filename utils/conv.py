@@ -40,13 +40,18 @@ class ConvolutionalBlock(nn.Module):
 
         norm_layer = None
         if normalization is not None:
-            # class_name = '{}Norm{}d'.format(
-            #     normalization.capitalize(), dimensions)
-            class_name = '{}Norm'.format(
-                normalization.capitalize())
-            norm_class = getattr(nn, class_name)
-            # num_features = in_channels if preactivation else out_channels
-            norm_layer = norm_class(num_groups=1, num_channels=out_channels)
+            if normalization == 'Batch':
+                class_name = '{}Norm{}d'.format(
+                    normalization.capitalize(), dimensions)
+                norm_class = getattr(nn, class_name)
+                # num_features = in_channels if preactivation else out_channels
+                norm_layer = norm_class(out_channels)
+            elif normalization == 'Group':
+                class_name = '{}Norm'.format(
+                    normalization.capitalize())
+                norm_class = getattr(nn, class_name)
+                # num_features = in_channels if preactivation else out_channels
+                norm_layer = norm_class(num_groups=1, num_channels=out_channels)
 
         activation_layer = None
         if activation is not None:

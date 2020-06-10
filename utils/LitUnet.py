@@ -1,4 +1,5 @@
 import pytorch_lightning as pl
+from typing import Optional
 from torch.nn import MultiLabelSoftMarginLoss
 from .unet import *
 import torch
@@ -12,7 +13,7 @@ class LitUnet(pl.LightningModule):
             out_classes: int = 1,  # also the number of labels
             dimensions: int = 3,
             num_encoding_blocks: int = 3,
-            normalization: bool = False,
+            normalization: Optional[str] = "Group",
             batch_size: int = 1,
     ):
         super().__init__()
