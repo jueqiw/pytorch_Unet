@@ -100,19 +100,12 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
                 optimizer.step()
             epoch_losses.append(batch_loss.item())
             print(f'{ctime()}: Epoch: {epoch_idx} Batch: {batch_idx}| {action.value} loss: {batch_loss.item():0.5f} | iou: {iou.item():0.5f} | dices : {dice.item():0.5f}')
-            # if action.value == Action.TRAIN and batch_loss.item() < min_loss:
-            if is_training and batch_loss.item() < min_loss:
-                if os.path.exists(f"./log/checkpoint/Epoch_{epoch_idx}_loss_{min_loss:0.3}.pth"):
-                    os.system(f"del ./log/checkpoint/Epoch_{epoch_idx}_loss_{min_loss:0.3}.pth")
-                min_loss = batch_loss.item()
-                torch.save(model.state_dict(), f'./log/checkpoint/Epoch_{min_loss}_loss_{min_loss:0.3}.pth')
-                logging.info(f'{ctime()} :Saved model!')
     epoch_losses = np.array(epoch_losses)
     ious = np.array(ious)
     dices = np.array(dices)
     print(f'{ctime()}: Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.5f} | iou: {ious.mean():0.5f} | dices : {dices.mean():0.5f}')
     if not is_training and epoch_losses.mean() < min_loss:
-        min_loss = epoch_losses.item()
+        min_loss = epoch_losses.mean().item()
         print("Yes")
         torch.save(model.state_dict(), f'./checkpoint/Epoch_{epoch_idx}_loss_{min_loss:0.3f}.pth')
         logging.info(f'{ctime()} :Saved model')
