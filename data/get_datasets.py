@@ -1,51 +1,13 @@
 from .get_subjects import *
+from .transform import get_val_transform, get_train_transforms
 import torchio
-from torchio.transforms import (
-    RandomFlip,
-    RandomAffine,
-    RandomElasticDeformation,
-    RandomNoise,
-    RandomMotion,
-    RandomBiasField,
-    RescaleIntensity,
-    Resample,
-    ToCanonical,
-    ZNormalization,
-    CropOrPad,
-    HistogramStandardization,
-    OneOf,
-    Pad,
-    Compose,
-)
-from .squeeze import ToSqueeze
 
 
 def get_dataset(datasets):
-    # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
-    # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR]
     subjects = get_subjects(datasets)
 
-    training_transform = Compose([
-        ToSqueeze(),
-        ToCanonical(),
-        ZNormalization(masking_method=ZNormalization.mean),  # Subtract mean and divide by standard deviation.
-        RescaleIntensity((0, 1)),  # so that there are no negative values for RandomMotion
-        RandomMotion(),
-        # HistogramStandardization(landmarks_dict={MRI: landmarks}),
-        RandomBiasField(),
-        RandomNoise(),
-        # CropOrPad((128, 128, 128)),  # do not know what it do
-        RandomFlip(axes=(0,)),
-        OneOf({
-            RandomAffine(): 0.8,
-            RandomElasticDeformation(): 0.2,
-        }),
-    ])
-
-    validation_transform = Compose([
-        ZNormalization(masking_method=ZNormalization.mean),
-        ToCanonical(),
-    ])
+    training_transform = get_train_transforms()
+    validation_transform = get_val_transform()
 
     num_subjects = len(subjects)
     # print(f"{ctime()}: get total number of {num_subjects} subjects")
@@ -59,7 +21,4 @@ def get_dataset(datasets):
 
     validation_set = torchio.ImagesDataset(
         validation_subjects, transform=validation_transform)
-
-    print('Training set:', len(training_set), 'subjects')
-    print('Validation set:', len(validation_set), 'subjects')
     return training_set, validation_set

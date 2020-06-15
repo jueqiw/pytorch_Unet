@@ -2,6 +2,7 @@ from typing import Optional
 
 import torch
 import torch.nn as nn
+from torch.nn import ConvTranspose3d
 import torch.nn.functional as F
 
 from .conv import ConvolutionalBlock
@@ -20,11 +21,10 @@ class Decoder(nn.Module):
     def __init__(
             self,
             in_channels_skip_connection: int,  # 32
-            dimensions: int,
-            upsampling_type: str,
             num_decoding_blocks: int,
             normalization: Optional[str],
             # preactivation: bool = False,
+            upsampling_type: str = "conv",
             residual: bool = False,
             padding: int = 0,
             padding_mode: str = 'zeros',
@@ -33,14 +33,12 @@ class Decoder(nn.Module):
             dropout: float = 0.3,
             ):
         super().__init__()
-        upsampling_type = fix_upsampling_type(upsampling_type, dimensions)
         self.decoding_blocks = nn.ModuleList()
         # self.dilation = initial_dilation
         first_decoding_block = True
         for _ in range(num_decoding_blocks):  # 3
             decoding_block = DecodingBlock(
                 in_channels_skip_connection,
-                dimensions,
                 upsampling_type,
                 padding=padding,
                 padding_mode=padding_mode,
@@ -58,6 +56,7 @@ class Decoder(nn.Module):
     def forward(self, skip_connections, x):
         zipped = zip(reversed(skip_connections), self.decoding_blocks)
         for skip_connection, decoding_block in zipped:
+            # print(f"skip_connection: {skip_connection.shape}")
             x = decoding_block(skip_connection, x)
         return x
 
@@ -66,7 +65,6 @@ class DecodingBlock(nn.Module):
     def __init__(
             self,
             in_channels_skip_connection: int,  # 32
-            dimensions: int,
             upsampling_type: str,
             normalization: Optional[str] = 'Group',
             # preactivation: bool = True,
@@ -89,7 +87,7 @@ class DecodingBlock(nn.Module):
                 in_channels = in_channels_skip_connection * 2
                 out_channels = in_channels_skip_connection
             self.upsample = get_conv_transpose_layer(
-                dimensions, in_channels, out_channels)
+                in_channels, out_channels)
         else:
             self.upsample = get_upsampling_layer(upsampling_type)
 
@@ -97,9 +95,8 @@ class DecodingBlock(nn.Module):
         out_channels = in_channels_skip_connection
 
         self.conv1 = ConvolutionalBlock(
-            dimensions,
-            in_channels_first,
-            out_channels,
+            in_channels=in_channels_first,
+            out_channels=out_channels,
             normalization=normalization,
             # preactivation=preactivation,
             padding=padding,
@@ -134,8 +131,9 @@ class DecodingBlock(nn.Module):
         #     )
 
     def forward(self, skip_connection, x):
+        # print(f"before x shape: {x.shape}")
         x = self.upsample(x)  # upConvLayer
-        # skip_connection = self.center_crop(skip_connection, x)
+        # print(f"after x shape: {x.shape}")
         x = torch.cat((skip_connection, x), dim=CHANNELS_DIMENSION)
         x = self.conv1(x)
         return x
@@ -163,17 +161,6 @@ def get_upsampling_layer(upsampling_type: str) -> nn.Upsample:
     return nn.Upsample(scale_factor=2, mode=upsampling_type)
 
 
-def get_conv_transpose_layer(dimensions, in_channels, out_channels):
-    class_name = 'ConvTranspose{}d'.format(dimensions)
-    conv_class = getattr(nn, class_name)
-    conv_layer = conv_class(in_channels, out_channels, kernel_size=5, stride=2, padding=2, output_padding=1)
+def get_conv_transpose_layer(in_channels, out_channels):
+    conv_layer = ConvTranspose3d(in_channels, out_channels, kernel_size=5, stride=2, padding=2, output_padding=1)
     return conv_layer
-
-
-def fix_upsampling_type(upsampling_type: str, dimensions: int):  # ??
-    if upsampling_type == 'linear':
-        if dimensions == 2:
-            upsampling_type = 'bilinear'
-        elif dimensions == 3:
-            upsampling_type = 'trilinear'
-    return upsampling_type

@@ -30,8 +30,8 @@ class MRI:
         self.val_data = random.random()
         self.flag = True  # in case some file are not NIFTI file
         self.get_path()
-        if (MRI.id % 10) == 0:
-            print("have processed %d file" % MRI.id)
+        # if (MRI.id % 10) == 0:
+        #     print("have processed %d file" % MRI.id)
 
     def get_path(self):
         """

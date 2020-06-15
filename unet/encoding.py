@@ -8,7 +8,6 @@ class Encoder(nn.Module):
             self,
             in_channels: int,
             out_channels_first: int,
-            dimensions: int,
             pooling_type: str,
             num_encoding_blocks: int,
             normalization: Optional[str],
@@ -27,11 +26,10 @@ class Encoder(nn.Module):
         is_first_block = True
         for _ in range(num_encoding_blocks):  # 3
             encoding_block = EncodingBlock(
-                in_channels,
-                out_channels_first,
-                dimensions,
-                normalization,
-                pooling_type,
+                in_channels=in_channels,
+                out_channels_first=out_channels_first,
+                normalization=normalization,
+                pooling_type=pooling_type,
                 # preactivation,
                 is_first_block=is_first_block,
                 # residual=residual,
@@ -43,12 +41,8 @@ class Encoder(nn.Module):
             )
             is_first_block = False
             self.encoding_blocks.append(encoding_block)
-            if dimensions == 2:
-                in_channels = out_channels_first
-                out_channels_first = in_channels * 2
-            elif dimensions == 3:  # ?
-                in_channels = out_channels_first
-                out_channels_first = in_channels * 2
+            in_channels = out_channels_first
+            out_channels_first = in_channels * 2
 
             # dilation is always None
             # if self.dilation is not None:
@@ -71,7 +65,6 @@ class EncodingBlock(nn.Module):
             self,
             in_channels: int,
             out_channels_first: int,
-            dimensions: int,
             normalization: Optional[str],
             pooling_type: str = None,
             # preactivation: bool = False,
@@ -99,9 +92,8 @@ class EncodingBlock(nn.Module):
         # preactivation = self.preactivation
 
         self.conv1 = ConvolutionalBlock(
-            dimensions,
-            in_channels,
-            out_channels_first,
+            in_channels=in_channels,
+            out_channels=out_channels_first,
             normalization=normalization,
             # preactivation=preactivation,
             padding=2,
@@ -112,15 +104,10 @@ class EncodingBlock(nn.Module):
         )
 
         out_channels_second = out_channels_first
-        if dimensions == 2:
-            out_channels_second = out_channels_first
-        elif dimensions == 3:
-            out_channels_second = out_channels_first
 
         self.conv2 = ConvolutionalBlock(
-            dimensions,
-            out_channels_first,
-            out_channels_second,
+            in_channels=out_channels_first,
+            out_channels=out_channels_second,
             normalization=normalization,
             # preactivation=self.preactivation,
             padding=2,
@@ -131,7 +118,7 @@ class EncodingBlock(nn.Module):
 
         self.downsample = None
         if pooling_type is not None:
-            self.downsample = get_downsampling_layer(dimensions, pooling_type)
+            self.downsample = get_downsampling_layer(pooling_type)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -142,7 +129,6 @@ class EncodingBlock(nn.Module):
         else:
             skip_connection = x
             x = self.downsample(x)
-
         return x, skip_connection
 
     @property
@@ -151,11 +137,10 @@ class EncodingBlock(nn.Module):
 
 
 def get_downsampling_layer(
-        dimensions: int,
         pooling_type: str,
         kernel_size: int = 2,
         stride: int = 2,
 ) -> nn.Module:
-    class_name = '{}Pool{}d'.format(pooling_type.capitalize(), dimensions)
+    class_name = '{}Pool3d'.format(pooling_type.capitalize())
     class_ = getattr(nn, class_name)
     return class_(kernel_size)

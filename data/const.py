@@ -1,10 +1,14 @@
-from .config import *
 from pathlib import Path
+from argparse import ArgumentParser
 import os
 
 SIZE = 128
-LEARN_RATE = 0.001
-COMPUTECANADA = True
+COMPUTECANADA = False
+
+if COMPUTECANADA:
+    SIZE = 128
+else:
+    SIZE = 64
 
 # DATASET_DIR = Path("/project/6005889/U-Net_MRI-Data")
 #
@@ -19,10 +23,11 @@ COMPUTECANADA = True
 #
 # ADNI_LABEL = "brain_extraction"
 
-opt = Option()
+parser = ArgumentParser()
+args = parser.parse_args()
 
 if COMPUTECANADA:
-    DATA_ROOT = Path(opt.parse().data_dir) / "work"
+    DATA_ROOT = Path(args.data_dir) / "work"
 else:
     DATA_ROOT = Path(__file__).resolve().parent.parent.parent / "Data"
 

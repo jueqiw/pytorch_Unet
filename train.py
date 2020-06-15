@@ -1,7 +1,7 @@
 import torch
 from torchio import DATA
 from data.get_datasets import get_dataset
-from utils.unet import UNet, UNet3D
+from unet.unet import UNet, UNet3D
 from data.const import *
 from data.config import Option
 from pathlib import Path
@@ -32,6 +32,7 @@ dir_checkpoint = 'checkpoint/'
 option = Option()
 args = option.parse()
 
+
 class Action(enum.Enum):
     TRAIN = 'Training'
     VALIDATE = 'Validation'
@@ -45,7 +46,6 @@ def prepare_batch(batch, device):
     # targets[foreground > 0.5] = 1
     inputs = F.interpolate(inputs, (64, 64, 64))
     foreground = F.interpolate(foreground, (64, 64, 64))
-    # print(dataset)
     return inputs, foreground
 
 
@@ -106,7 +106,6 @@ def run_epoch(epoch_idx, action, loader, model, optimizer, min_loss, writer):
     print(f'{ctime()}: Epoch: {epoch_idx} | {action.value} mean loss: {epoch_losses.mean():0.5f} | iou: {ious.mean():0.5f} | dices : {dices.mean():0.5f}')
     if not is_training and epoch_losses.mean() < min_loss:
         min_loss = epoch_losses.mean().item()
-        print("Yes")
         torch.save(model.state_dict(), f'./checkpoint/Epoch_{epoch_idx}_loss_{min_loss:0.3f}.pth')
         logging.info(f'{ctime()} :Saved model')
     return epoch_losses.mean(), min_loss
@@ -130,7 +129,7 @@ if __name__ == "__main__":
     if not os.path.exists('./log/summary'):
         os.mkdir('./log/summary')
     if not os.path.exists('./log/checkpoint'):
-        os.mkdir('./logcheckpoint')
+        os.mkdir('./log/checkpoint')
 
     # default `log_dir` is "runs" - we'll be more specific here
     writer = SummaryWriter('./log/summary/Unet')
@@ -141,10 +140,9 @@ if __name__ == "__main__":
     SPATIAL_DIMENSIONS = 2, 3, 4
 
     if COMPUTECANADA:
-        # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
-        datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR]
+        datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
     else:
-    # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR]
+        # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR]
         datasets = [CC359_DATASET_DIR]
 
     training_set, validation_set = get_dataset(datasets)

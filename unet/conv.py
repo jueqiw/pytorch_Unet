@@ -1,12 +1,12 @@
 from typing import Optional
 
-import torch.nn as nn
+from torch.nn import Conv3d, BatchNorm3d, GroupNorm, Dropout3d
+from torch import nn
 
 
 class ConvolutionalBlock(nn.Module):
     def __init__(
             self,
-            dimensions: int,
             in_channels: int,
             out_channels: int,
             normalization: Optional[str] = None,
@@ -27,12 +27,10 @@ class ConvolutionalBlock(nn.Module):
         #     total_padding = kernel_size + 2 * (dilation - 1) - 1
         #     padding = total_padding // 2
 
-        class_name = 'Conv{}d'.format(dimensions)
-        conv_class = getattr(nn, class_name)
-        conv_layer = conv_class(
-            in_channels,
-            out_channels,
-            kernel_size,
+        conv_layer = Conv3d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
             padding=padding,
             padding_mode=padding_mode,
             # dilation=dilation,
@@ -41,17 +39,11 @@ class ConvolutionalBlock(nn.Module):
         norm_layer = None
         if normalization is not None:
             if normalization == 'Batch':
-                class_name = '{}Norm{}d'.format(
-                    normalization.capitalize(), dimensions)
-                norm_class = getattr(nn, class_name)
                 # num_features = in_channels if preactivation else out_channels
-                norm_layer = norm_class(out_channels)
+                norm_layer = BatchNorm3d(out_channels)
             elif normalization == 'Group':
-                class_name = '{}Norm'.format(
-                    normalization.capitalize())
-                norm_class = getattr(nn, class_name)
                 # num_features = in_channels if preactivation else out_channels
-                norm_layer = norm_class(num_groups=1, num_channels=out_channels)
+                norm_layer = GroupNorm(num_groups=1, num_channels=out_channels)
 
         activation_layer = None
         if activation is not None:
@@ -68,9 +60,7 @@ class ConvolutionalBlock(nn.Module):
 
         dropout_layer = None
         if dropout:
-            class_name = 'Dropout{}d'.format(dimensions)
-            dropout_class = getattr(nn, class_name)
-            dropout_layer = dropout_class(p=dropout)
+            dropout_layer = Dropout3d(p=dropout)
             self.add_if_not_none(block, dropout_layer)
 
         self.conv_layer = conv_layer
@@ -83,6 +73,7 @@ class ConvolutionalBlock(nn.Module):
         self.block = nn.Sequential(*block)
 
     def forward(self, x):
+        # print(f"x shape: {x.shape}")
         return self.block(x)
 
     @staticmethod

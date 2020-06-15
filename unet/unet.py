@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Main module."""
+"""Main module. right now just a copy from https://github.com/fepegar/unet/tree/master/unet right now"""
 
 from typing import Optional
 import torch.nn as nn
@@ -8,15 +8,12 @@ from .encoding import Encoder, EncodingBlock
 from .decoding import Decoder
 from .conv import ConvolutionalBlock
 
-__all__ = ['UNet', 'UNet2D', 'UNet3D']
-
 
 class UNet(nn.Module):
     def __init__(
             self,
             in_channels: int = 1,
             out_classes: int = 1,  # 1
-            dimensions: int = 2,
             num_encoding_blocks: int = 3,
             out_channels_first_layer: int = 8,
             normalization: Optional[str] = 'Group',
@@ -40,12 +37,11 @@ class UNet(nn.Module):
 
         # Encoder Conv3D *2 *2
         self.encoder = Encoder(
-            in_channels,
-            out_channels_first_layer,
-            dimensions,
-            pooling_type,
-            depth,
-            normalization,
+            in_channels=in_channels,
+            out_channels_first=out_channels_first_layer,
+            pooling_type=pooling_type,
+            num_encoding_blocks=depth,
+            normalization=normalization,
             # preactivation=preactivation,
             # residual=residual,
             padding=padding,
@@ -60,11 +56,10 @@ class UNet(nn.Module):
 
         num_decoding_blocks = depth
         self.decoder = Decoder(
-            in_channels_skip_connection,
-            dimensions,
-            upsampling_type="conv",
+            in_channels_skip_connection=in_channels_skip_connection,
             num_decoding_blocks=num_decoding_blocks,
             normalization=normalization,
+            upsampling_type="conv",
             # preactivation=preactivation,
             residual=residual,
             padding=2,
@@ -81,12 +76,9 @@ class UNet(nn.Module):
         #     self.monte_carlo_layer = dropout_class(p=monte_carlo_dropout)
 
         # Classifier
-        if dimensions == 2:
-            in_channels = out_channels_first_layer
-        elif dimensions == 3:
-            in_channels = out_channels_first_layer
+        in_channels = out_channels_first_layer
         self.classifier = ConvolutionalBlock(
-            dimensions, in_channels, out_channels=out_classes,
+            in_channels, out_channels=out_classes,
             kernel_size=1, activation=None,
             dropout=0,
         )
@@ -95,24 +87,3 @@ class UNet(nn.Module):
         skip_connections, encoding = self.encoder(x)
         x = self.decoder(skip_connections, encoding)
         return self.classifier(x)
-
-
-class UNet2D(UNet):
-    def __init__(self, *args, **user_kwargs):
-        kwargs = {}
-        kwargs['dimensions'] = 2
-        kwargs['num_encoding_blocks'] = 5
-        kwargs['out_channels_first_layer'] = 64
-        kwargs.update(user_kwargs)
-        super().__init__(*args, **kwargs)
-
-
-class UNet3D(UNet):
-    def __init__(self, *args, **user_kwargs):
-        kwargs = {}
-        kwargs['dimensions'] = 3
-        kwargs['num_encoding_blocks'] = 3  # 4
-        kwargs['out_channels_first_layer'] = 8
-        # kwargs['normalization'] = 'batch'
-        kwargs.update(user_kwargs)
-        super().__init__(*args, **kwargs)
