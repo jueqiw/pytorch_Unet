@@ -14,7 +14,7 @@ from pathlib import Path
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch import Tensor
 from typing import Any, Dict, List, Tuple, Union
-
+from pytorch_lightning.core.lightning import LightningModule
 
 """
 For TensorBoard logging usage, see:
@@ -41,11 +41,6 @@ def get_logger(logdir: Path) -> TensorBoardLogger:
     return TensorBoardLogger(str(logdir), name="unet")
 
 
-# to be called in LightningModule.train_step
-def log_progress():
-    pass
-
-
 def slice_label(i: int, mids: Tensor, slicekey: str):
     quarts = mids // 2  # slices at first quarter of the way through
     quarts3_4 = mids + quarts  # slices 3/4 of the way through
@@ -64,8 +59,9 @@ def slice_label(i: int, mids: Tensor, slicekey: str):
 
 # https://www.tensorflow.org/tensorboard/image_summaries#logging_arbitrary_image_data
 class BrainSlices:
-    def __init__(self, img: Tensor, target_: Tensor, prediction: Tensor):
+    def __init__(self, lightning: LightningModule, img: Tensor, target_: Tensor, prediction: Tensor):
         # lol mypy type inference really breaks down here...
+        self.lightning = lightning
         img_: ndarray = img.cpu().detach().numpy().squeeze()
         targ_: ndarray = target_.cpu().detach().numpy().squeeze()
         pred: ndarray = prediction.cpu().detach().numpy().squeeze()
@@ -105,7 +101,7 @@ class BrainSlices:
             "3/4": [f"[{quarts3_4[0]},:,:]", f"[:,{quarts3_4[1]},:]", f"[:,:,{quarts3_4[2]}]"],
         }
 
-    def visualize(self, batch_idx: int, epoch: int, outdir: Path = None) -> None:
+    def plot(self) -> Tuple[Figure, Axes]:
         nrows, ncols = 3, 1  # one row for each slice position
         all_trues, all_targets, all_preds = [], [], []
         for i in range(3):  # We want this first so middle images are middle
@@ -129,7 +125,7 @@ class BrainSlices:
 
         # Consistently apply colormap since images are standardized but still
         # vary considerably in maximum and minimum values
-        true_args = dict(vmin=-1.0, vmax=1.5, cmap="gray")
+        true_args = dict(vmin=0.0, vmax=5.0, cmap="gray")
         mask_args = dict(vmin=0.0, vmax=1.0, cmap="gray", alpha=0.5)
 
         axes[0].imshow(true, **true_args)
@@ -151,15 +147,46 @@ class BrainSlices:
 
         fig.tight_layout(h_pad=0)
         fig.subplots_adjust(hspace=0.0, wspace=0.0)
+        return fig, axes
 
-        if outdir is None:
-            plt.show()
-        else:
+    def visualize(self, batch_idx: int, outdir: Path = None) -> None:
+        fig, axes = self.plot()
+        if self.lightning.show_plots:
+            if outdir is None:  # for local debugging
+                plt.show()
+                plt.close()
+                return
             fig.set_size_inches(w=10, h=6)
-            os.makedirs(str(outdir), exist_ok=True)
-            plt.savefig(outdir / f"epoch{epoch}_batch{batch_idx}.png", dpi=200)
+            os.makedirs(outdir, exist_ok=True)
+            plt.savefig(outdir / f"epoch{self.lightning.current_epoch}_batch{batch_idx}.png", dpi=200)
             plt.close()
+            return
+
+    def log(self, batch_idx: int) -> None:
+        logger = self.lightning.logger
+        fig, axes = self.plot()
+        summary = f"Epoch {self.lightning.current_epoch + 1} - Batch {batch_idx}"
+        logger.experiment.add_figure(summary, fig, close=True)
+
+        # if you want to manually intervene, look at the code at
+        # https://github.com/pytorch/pytorch/blob/master/torch/utils/tensorboard/_utils.py
+        # permalink to version:
+        # https://github.com/pytorch/pytorch/blob/780fa2b4892512b82c8c0aaba472551bd0ce0fad/torch/utils/tensorboard/_utils.py#L5
+        # then use logger.experiment.add_image(summary, image)
 
 
-def tboard_img_summary(img: Tensor, target: Tensor, prediction: Tensor) -> Any:
-    raise NotImplementedError()
+def log_weights(module: LightningModule) -> None:
+    for name, param in module.named_parameters():
+        module.logger.experiment.add_histogram(name, param, global_step=module.global_step)
+
+
+"""
+Actual methods on logger.experiment can be found here!!!
+https://pytorch.org/docs/stable/tensorboard.html
+"""
+
+
+def log_all_info(module: LightningModule, img: Tensor, target: Tensor, logist: Tensor, batch_idx: int) -> None:
+    """Helper for decluttering training loop. Just performs all logging functions."""
+    BrainSlices(module, img, target, logist).log(batch_idx)
+    log_weights(module)

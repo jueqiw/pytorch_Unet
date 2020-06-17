@@ -28,13 +28,12 @@ def get_train_transforms() -> Compose:
         # HistogramStandardization(landmarks_dict={MRI: landmarks}),
         RandomBiasField(),
         RandomNoise(),
-        # CropOrPad((128, 128, 128)),  # do not know what it do
         RandomFlip(axes=(0,)),
         OneOf({
             RandomAffine(): 0.8,
             RandomElasticDeformation(): 0.2,
         }),
-        ToResize(),
+        ToResize()
     ])
 
     return training_transform
@@ -45,6 +44,5 @@ def get_val_transform() -> Compose:
         ToSqueeze(),
         ZNormalization(masking_method=ZNormalization.mean),
         ToCanonical(),
-        ToResize(),
     ])
     return validation_transform

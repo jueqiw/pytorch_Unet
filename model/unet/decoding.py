@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from torch.nn import ConvTranspose3d
 import torch.nn.functional as F
+from torch import Tensor
 
 from .conv import ConvolutionalBlock
 
@@ -23,12 +24,10 @@ class Decoder(nn.Module):
             in_channels_skip_connection: int,  # 32
             num_decoding_blocks: int,
             normalization: Optional[str],
-            # preactivation: bool = False,
             upsampling_type: str = "conv",
             residual: bool = False,
             padding: int = 0,
             padding_mode: str = 'zeros',
-            activation: Optional[str] = 'ReLU',
             # initial_dilation: Optional[int] = None,
             dropout: float = 0.3,
             ):
@@ -42,7 +41,6 @@ class Decoder(nn.Module):
                 upsampling_type,
                 padding=padding,
                 padding_mode=padding_mode,
-                activation=activation,
                 # dilation=self.dilation,
                 dropout=dropout,
                 first_decoder_block=first_decoding_block
@@ -56,7 +54,6 @@ class Decoder(nn.Module):
     def forward(self, skip_connections, x):
         zipped = zip(reversed(skip_connections), self.decoding_blocks)
         for skip_connection, decoding_block in zipped:
-            # print(f"skip_connection: {skip_connection.shape}")
             x = decoding_block(skip_connection, x)
         return x
 
@@ -67,11 +64,9 @@ class DecodingBlock(nn.Module):
             in_channels_skip_connection: int,  # 32
             upsampling_type: str,
             normalization: Optional[str] = 'Group',
-            # preactivation: bool = True,
             # residual: bool = False,
             padding: int = 0,
             padding_mode: str = 'zeros',
-            activation: Optional[str] = 'ReLU',
             # dilation: Optional[int] = None,
             dropout: float = 0,
             first_decoder_block: bool = True,
@@ -98,10 +93,8 @@ class DecodingBlock(nn.Module):
             in_channels=in_channels_first,
             out_channels=out_channels,
             normalization=normalization,
-            # preactivation=preactivation,
             padding=padding,
             padding_mode=padding_mode,
-            activation=activation,
             # dilation=dilation,
             dropout=dropout,
         )
@@ -115,7 +108,6 @@ class DecodingBlock(nn.Module):
         #     # preactivation=preactivation,
         #     padding=padding,
         #     padding_mode=padding_mode,
-        #     activation=activation,
         #     dilation=dilation,
         #     dropout=dropout,
         # )
@@ -131,23 +123,26 @@ class DecodingBlock(nn.Module):
         #     )
 
     def forward(self, skip_connection, x):
-        # print(f"before x shape: {x.shape}")
         x = self.upsample(x)  # upConvLayer
-        # print(f"after x shape: {x.shape}")
-        x = torch.cat((skip_connection, x), dim=CHANNELS_DIMENSION)
+        cropped = self.crop(x, skip_connection)
+        x = torch.cat((cropped, x), dim=CHANNELS_DIMENSION)
         x = self.conv1(x)
+        print(f"x.shape {x.shape}")
         return x
 
-    def center_crop(self, skip_connection, x):
-        skip_shape = torch.tensor(skip_connection.shape)
-        x_shape = torch.tensor(x.shape)
-        crop = skip_shape[2:] - x_shape[2:]
-        half_crop = crop // 2
-        # If skip_connection is 10, 20, 30 and x is (6, 14, 12)
-        # Then pad will be (-2, -2, -3, -3, -9, -9)
-        pad = -torch.stack((half_crop, half_crop)).t().flatten()
-        skip_connection = F.pad(skip_connection, pad.tolist())
-        return skip_connection
+    def crop(self, x: Tensor, skip: Tensor) -> Tensor:
+        # x.shape == skip.shape copy code from
+        # https://github.com/DM-Berger/unet-learn/blob/1a197860ae8b87cb42802454ad830b9fd3c6f2e4/src/model/decode.py#L40
+        # (left, right, top, bottom, front, back) is F.pad order we are just implementing our own version of
+        # https://github.com/fepegar/unet/blob/9f64483d351b4f7d95c0d871aa7aa587b8fdb21b/unet/decoding.py#L142 but
+        # fixing their bug which won't work for odd numbers
+        shape_diffs = torch.tensor(x.shape)[2:] - torch.tensor(skip.shape)[2:]
+        halfs = torch.true_divide(shape_diffs, 2)
+        halfs_left = -torch.floor(halfs).to(dtype=int)
+        halfs_right = -torch.ceil(halfs).to(dtype=int)
+        pads = torch.stack([halfs_left, halfs_right]).t().flatten().tolist()
+        cropped = F.pad(skip, pads)
+        return cropped
 
 
 def get_upsampling_layer(upsampling_type: str) -> nn.Upsample:

@@ -1,5 +1,4 @@
 from pathlib import Path
-from argparse import ArgumentParser
 import os
 
 SIZE = 128
@@ -23,13 +22,20 @@ else:
 #
 # ADNI_LABEL = "brain_extraction"
 
-parser = ArgumentParser()
-args = parser.parse_args()
+data_dir = ""
+
+
+def get_data_dir(pharams_data_dir):
+    data_dir = pharams_data_dir
+
 
 if COMPUTECANADA:
-    DATA_ROOT = Path(args.data_dir) / "work"
+    DATA_ROOT = Path(data_dir) / "work"
 else:
     DATA_ROOT = Path(__file__).resolve().parent.parent.parent / "Data"
+
+# for file in os.listdir(DATA_ROOT):
+#     print(file)
 
 
 CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
@@ -45,4 +51,3 @@ if COMPUTECANADA:
     ADNI_LABEL = ADNI_DATASET_DIR_1 / "brain_extraction"
 else:
     ADNI_LABEL = DATA_ROOT / "pincram_bin_brain_masks_5074//pincram_bin_brain_masks_5074"
-

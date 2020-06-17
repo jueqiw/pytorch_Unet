@@ -19,16 +19,16 @@ class UNet(nn.Module):
             normalization: Optional[str] = 'Group',
             pooling_type: str = 'max',
             upsampling_type: str = 'conv',
-            preactivation: bool = False,
+            preactivation: bool = False,  # try
             residual: bool = False,
             padding: int = 2,
             padding_mode: str = 'zeros',
-            activation: Optional[str] = 'ReLU',
             initial_dilation: Optional[int] = None,
             dropout: float = 0.3,
             monte_carlo_dropout: float = 0.3,
+            all_size_input: bool = False,
             ):
-        super().__init__()
+        super(UNet, self).__init__()
         depth = num_encoding_blocks  # 3
 
         # Force padding if residual blocks
@@ -42,11 +42,10 @@ class UNet(nn.Module):
             pooling_type=pooling_type,
             num_encoding_blocks=depth,
             normalization=normalization,
-            # preactivation=preactivation,
+            preactivation=preactivation,
             # residual=residual,
             padding=padding,
             padding_mode=padding_mode,
-            activation=activation,
             # initial_dilation=initial_dilation,
             dropout=dropout,
         )
@@ -64,7 +63,6 @@ class UNet(nn.Module):
             residual=residual,
             padding=2,
             padding_mode=padding_mode,
-            activation=activation,
             # initial_dilation=self.encoder.dilation,
             dropout=dropout,
         )
@@ -79,7 +77,7 @@ class UNet(nn.Module):
         in_channels = out_channels_first_layer
         self.classifier = ConvolutionalBlock(
             in_channels, out_channels=out_classes,
-            kernel_size=1, activation=None,
+            kernel_size=1, activation=None, normalization="Group",
             dropout=0,
         )
 

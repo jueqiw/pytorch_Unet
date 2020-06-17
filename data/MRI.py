@@ -7,14 +7,6 @@ import nibabel as nib
 
 
 class MRI:
-    cc359_manual = set()
-    # files in val_label_dir are Manual label, get these files
-    for f in os.listdir(CC359_LABEL_DIR):
-        regex = re.compile(r'^CC(.*?)_manual')
-        match_object = re.match(regex, f)
-        if match_object is not None:
-            cc359_manual.add(match_object.group(0))
-    id = 0
 
     def __init__(self, dataset, file_name):
         """
@@ -24,7 +16,6 @@ class MRI:
         self.dataset = dataset
         self.file_name = file_name
         self.cc359_manual = set()
-        MRI.id += 1
         self.img_path = ""
         self.label_path = ""
         self.val_data = random.random()
@@ -32,6 +23,13 @@ class MRI:
         self.get_path()
         # if (MRI.id % 10) == 0:
         #     print("have processed %d file" % MRI.id)
+        self.cc359_manual = set()
+        # files in val_label_dir are Manual label, get these files
+        for f in os.listdir(CC359_LABEL_DIR):
+            regex = re.compile(r'^CC(.*?)_manual')
+            match_object = re.match(regex, f)
+            if match_object is not None:
+                self.cc359_manual.add(match_object.group(0))
 
     def get_path(self):
         """
@@ -45,7 +43,7 @@ class MRI:
             if regex.match(self.file_name) and self.file_name[0] != '.':
                 name = self.file_name[:self.file_name.find('.')]
 
-                if name not in MRI.cc359_manual:
+                if name not in self.cc359_manual:
                     self.label_path = CC359_LABEL_DIR / "{}_staple.nii.gz".format(name)
                 else:
                     # use the manual data to get more precise

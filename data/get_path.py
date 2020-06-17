@@ -3,8 +3,8 @@ can be helpful to serialize your data and store it in a set of files (100-200MB 
 This is especially true if the data is being streamed over a network. This can also be useful for caching any
 data-preprocessing.
 """
-from .const import *
-from .MRI import *
+from .const import ADNI_DATASET_DIR_1, ADNI_DATASET_DIR_2
+from .MRI import MRI
 import os
 from pathlib import Path
 import re
