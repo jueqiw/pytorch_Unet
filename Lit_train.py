@@ -9,7 +9,6 @@ import os
 import torch
 
 
-# export
 def main(hparams):
     """
     Trains the Lightning model as specified in `hparams`
@@ -49,12 +48,8 @@ def main(hparams):
 
     trainer = Trainer(
         default_save_path=default_root_dir,
-        # Enable 16-bit
-        # faster for training also without loss in performance
-        amp_level='O1',
-        precision=16,
         gpus=hparams.gpus,
-        # num_nodes=4, distributed_backend='ddp',
+        num_nodes=4, distributed_backend='ddp',
         check_val_every_n_epoch=1,
         # log every k batches instead
         row_log_interval=100,

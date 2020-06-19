@@ -1,10 +1,9 @@
 from typing import Optional
 
 import torch
-import torch.nn as nn
-from torch.nn import ConvTranspose3d
-import torch.nn.functional as F
 from torch import Tensor
+import torch.nn as nn
+import torch.nn.functional as F
 
 from .conv import ConvolutionalBlock
 
@@ -22,28 +21,37 @@ class Decoder(nn.Module):
     def __init__(
             self,
             in_channels_skip_connection: int,  # 32
+            dimensions: int,
+            upsampling_type: str,
             num_decoding_blocks: int,
             normalization: Optional[str],
-            upsampling_type: str = "conv",
+            # preactivation: bool = False,
             residual: bool = False,
             padding: int = 0,
             padding_mode: str = 'zeros',
+            activation: Optional[str] = 'ReLU',
             # initial_dilation: Optional[int] = None,
             dropout: float = 0.3,
+            all_size_input: bool = False,
             ):
         super().__init__()
+        upsampling_type = fix_upsampling_type(upsampling_type, dimensions)
         self.decoding_blocks = nn.ModuleList()
         # self.dilation = initial_dilation
         first_decoding_block = True
-        for _ in range(num_decoding_blocks):  # 3
+        for i in range(num_decoding_blocks):  # 3
             decoding_block = DecodingBlock(
                 in_channels_skip_connection,
+                dimensions,
                 upsampling_type,
                 padding=padding,
                 padding_mode=padding_mode,
+                activation=activation,
                 # dilation=self.dilation,
                 dropout=dropout,
-                first_decoder_block=first_decoding_block
+                first_decoder_block=first_decoding_block,
+                num_block=i,
+                all_size_input=all_size_input,
             )
             self.decoding_blocks.append(decoding_block)
             in_channels_skip_connection //= 2
@@ -62,18 +70,23 @@ class DecodingBlock(nn.Module):
     def __init__(
             self,
             in_channels_skip_connection: int,  # 32
+            dimensions: int,
             upsampling_type: str,
             normalization: Optional[str] = 'Group',
             # residual: bool = False,
             padding: int = 0,
             padding_mode: str = 'zeros',
+            activation: Optional[str] = 'ReLU',
             # dilation: Optional[int] = None,
             dropout: float = 0,
             first_decoder_block: bool = True,
+            num_block: int = 0,
+            all_size_input: bool = False,
             ):
         super().__init__()
 
         # self.residual = residual
+        self.all_size_input = all_size_input
 
         if upsampling_type == 'conv':
             if first_decoder_block:
@@ -82,19 +95,23 @@ class DecodingBlock(nn.Module):
                 in_channels = in_channels_skip_connection * 2
                 out_channels = in_channels_skip_connection
             self.upsample = get_conv_transpose_layer(
-                in_channels, out_channels)
+                dimensions, in_channels, out_channels)
         else:
             self.upsample = get_upsampling_layer(upsampling_type)
 
+        self.num_block = num_block
         in_channels_first = in_channels_skip_connection * 2
         out_channels = in_channels_skip_connection
 
         self.conv1 = ConvolutionalBlock(
-            in_channels=in_channels_first,
-            out_channels=out_channels,
+            dimensions,
+            in_channels_first,
+            out_channels,
             normalization=normalization,
+            # preactivation=preactivation,
             padding=padding,
             padding_mode=padding_mode,
+            activation=activation,
             # dilation=dilation,
             dropout=dropout,
         )
@@ -108,6 +125,7 @@ class DecodingBlock(nn.Module):
         #     # preactivation=preactivation,
         #     padding=padding,
         #     padding_mode=padding_mode,
+        #     activation=activation,
         #     dilation=dilation,
         #     dropout=dropout,
         # )
@@ -124,25 +142,31 @@ class DecodingBlock(nn.Module):
 
     def forward(self, skip_connection, x):
         x = self.upsample(x)  # upConvLayer
-        cropped = self.crop(x, skip_connection)
-        x = torch.cat((cropped, x), dim=CHANNELS_DIMENSION)
+        if self.all_size_input:
+            x = self.crop(x, skip_connection)  # crop x according skip_connection
+        x = torch.cat((skip_connection, x), dim=CHANNELS_DIMENSION)
         x = self.conv1(x)
-        print(f"x.shape {x.shape}")
         return x
 
     def crop(self, x: Tensor, skip: Tensor) -> Tensor:
-        # x.shape == skip.shape copy code from
-        # https://github.com/DM-Berger/unet-learn/blob/1a197860ae8b87cb42802454ad830b9fd3c6f2e4/src/model/decode.py#L40
-        # (left, right, top, bottom, front, back) is F.pad order we are just implementing our own version of
-        # https://github.com/fepegar/unet/blob/9f64483d351b4f7d95c0d871aa7aa587b8fdb21b/unet/decoding.py#L142 but
-        # fixing their bug which won't work for odd numbers
-        shape_diffs = torch.tensor(x.shape)[2:] - torch.tensor(skip.shape)[2:]
-        halfs = torch.true_divide(shape_diffs, 2)
-        halfs_left = -torch.floor(halfs).to(dtype=int)
-        halfs_right = -torch.ceil(halfs).to(dtype=int)
-        pads = torch.stack([halfs_left, halfs_right]).t().flatten().tolist()
-        cropped = F.pad(skip, pads)
-        return cropped
+        # Code is from
+        # https://github.com/milesial/Pytorch-UNet/blob/master/unet/unet_parts.py#L57
+        # but change 2D to 3D
+
+        diffT = skip.size()[2] - x.size()[2]
+        diffH = skip.size()[3] - x.size()[3]
+        diffW = skip.size()[4] - x.size()[4]
+
+        if self.num_block % 2 == 0:
+            x = F.pad(x, [diffW // 2, diffW - diffW // 2,
+                          diffH // 2, diffH - diffH // 2,
+                          diffT // 2, diffT - diffT // 2])
+        else:
+            x = F.pad(x, [diffW - diffW // 2, diffW // 2,
+                          diffH - diffH // 2, diffH // 2,
+                          diffT - diffT // 2, diffT // 2])
+
+        return x
 
 
 def get_upsampling_layer(upsampling_type: str) -> nn.Upsample:
@@ -156,6 +180,17 @@ def get_upsampling_layer(upsampling_type: str) -> nn.Upsample:
     return nn.Upsample(scale_factor=2, mode=upsampling_type)
 
 
-def get_conv_transpose_layer(in_channels, out_channels):
-    conv_layer = ConvTranspose3d(in_channels, out_channels, kernel_size=5, stride=2, padding=2, output_padding=1)
+def get_conv_transpose_layer(dimensions, in_channels, out_channels):
+    class_name = 'ConvTranspose{}d'.format(dimensions)
+    conv_class = getattr(nn, class_name)
+    conv_layer = conv_class(in_channels, out_channels, kernel_size=5, stride=2, padding=2, output_padding=1)
     return conv_layer
+
+
+def fix_upsampling_type(upsampling_type: str, dimensions: int):  # ??
+    if upsampling_type == 'linear':
+        if dimensions == 2:
+            upsampling_type = 'bilinear'
+        elif dimensions == 3:
+            upsampling_type = 'trilinear'
+    return upsampling_type

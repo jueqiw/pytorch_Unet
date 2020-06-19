@@ -23,20 +23,18 @@ cd work
 #tar -cf ~/projects/def-foo/johndoe/results.tar work
 
 RUN=1
-BATCH_SIZE=4
+BATCH_SIZE=16
 GPUS=4
 LOG_DIR=/home/$USER/projects/def-jlevman/U-Net_MRI-Data/log
-echo "$SLURM_TMPDIR"
-
 
 # run script
 echo -e '\n\n\n'
 tensorboard --logdir="$LOG_DIR" --host 0.0.0.0 & python3 /home/$USER/projects/def-jlevman/jueqi/Unet1/Lit_train.py \
        --data_dir="$SLURM_TMPDIR" \
        --gpus="$GPUS" \
-       --batch-size=$BATCH_SIZE \
+       --batch_size=$BATCH_SIZE \
        --run=$RUN \
-       --name="Using original model, resize the picture to predict" \
+       --name="do not resize the img to predict" \
        --TensorBoardLogger="$LOG_DIR"
 
 

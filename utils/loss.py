@@ -6,9 +6,9 @@ SPATIAL_DIMENSIONS = 2, 3, 4
 
 def get_dice_score(output, target, epsilon=1e-9):
     p0 = output
-    g0 = target
+    g0 = target > 0.5
     p1 = 1 - p0
-    g1 = 1 - g0
+    g1 = ~ g0  # split into 1 in the dimension 0
     tp = (p0 * g0).sum(dim=SPATIAL_DIMENSIONS)
     fp = (p0 * g1).sum(dim=SPATIAL_DIMENSIONS)
     fn = (p1 * g0).sum(dim=SPATIAL_DIMENSIONS)

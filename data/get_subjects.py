@@ -59,11 +59,3 @@ def get_subjects(datasets):
 
     print(f"{ctime()}: getting number of subjects {len(subjects)}")
     return subjects
-
-
-if __name__ == '__main__':
-    # datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
-    datasets = [CC359_DATASET_DIR]
-
-    subjects = get_subjects(datasets)
-    print(f"get {len(subjects)} subjects!")

@@ -38,10 +38,10 @@ class Lightning_Unet(pl.LightningModule):
         subjects = get_subjects(datasets)
         num_subjects = len(subjects)
         num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
-        self.training_subjects = subjects[:num_training_subjects]
-        self.validation_subjects = subjects[num_training_subjects:]
-        # self.training_subjects = subjects[:10]
-        # self.validation_subjects = subjects[10:15]
+        # self.training_subjects = subjects[:num_training_subjects]
+        # self.validation_subjects = subjects[num_training_subjects:]
+        self.training_subjects = subjects[:10]
+        self.validation_subjects = subjects[10:15]
 
     def forward(self, x: Tensor) -> Tensor:
         return self.unet(x)
@@ -72,37 +72,48 @@ class Lightning_Unet(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         inputs, targets = batch["img"][DATA], batch["label"][DATA]
+        print(f"training max targets: {torch.max(targets)}")
+        print(f"training min targets: {torch.min(targets)}")
         logits = self(inputs)
         prob = torch.sigmoid(logits)
         dice, iou = get_dice_score(prob, targets)
-        if int(batch_idx) == 5:  # every epoch only save one fig
-            log_all_info(self, inputs, targets, logits, batch_idx)
+        if batch_idx != 0 and batch_idx == 25:  # every epoch only save one fig
+        # if True:
+            input, _ = inputs.chunk(inputs.size()[0], 0)  # split into 1 in the dimension 0
+            target, _ = targets.chunk(targets.size()[0], 0)  # split into 1 in the dimension 0
+            logit, _ = logits.chunk(logits.size()[0], 0)  # split into 1 in the dimension 0
+            log_all_info(self, input, target, logit, batch_idx)
         loss = F.binary_cross_entropy_with_logits(logits, targets)
-        tensorboard_logs = {"train_loss": loss, "train_IoU": iou, "train_dice": dice}
+        tensorboard_logs = {"train_loss": loss.mean(), "train_IoU": iou.mean(), "train_dice": dice.mean()}
         return {'loss': loss, "log": tensorboard_logs}
 
     def validation_step(self, batch, batch_id):
         inputs, targets = batch["img"][DATA], batch["label"][DATA]
-        # print(f"inputs shape: {inputs.shape}")
+        print(f"validation max targets: {torch.max(targets)}")
+        print(f"validation min targets: {torch.min(targets)}")
         if not self.hparams.all_size_input:
             inputs = F.interpolate(batch["img"][DATA], size=(SIZE, SIZE, SIZE))
             logits = self(inputs)
             shape = targets.shape
-            prob = torch.sigmoid(logits)
             logits = F.interpolate(logits, size=(shape[2], shape[3], shape[4]))
-            prob = F.interpolate(prob, size=(shape[2], shape[3], shape[4]))
+            prob = torch.sigmoid(logits)
         else:
             logits = self(inputs)
             prob = torch.sigmoid(logits)
-        # print(f"prob shape: {prob.shape}")
-        loss = F.binary_cross_entropy_with_logits(logits, targets)
+        loss = F.binary_cross_entropy_with_logits(logits, targets, reduction="mean")
+        if loss < 0:
+            print(f"max prob: {torch.max(prob)}")
+            print(f"min prob: {torch.min(prob)}")
+            print(f"loss: {loss.item()}")
         dice, iou = get_dice_score(prob, targets)
-        # tensorboard_logs = {"val_loss": loss, "val_IoU": iou, "val_dice": dice}
         if iou.mean() > 1.0:  # need to fix the initial part
             print(f"prob max: {torch.max(prob)}")
             print(f"target max: {torch.max(targets)}")
+            print(f"prob shape: {prob.shape}")
+            print(f"target shape: {targets.shape}")
+            print(f"iou: {iou.mean()}")
             raise Exception("val_IoU > 1 ???")
-        return {'val_step_loss': loss, 'val_step_IoU': iou, 'val_step_dice': dice}
+        return {'val_step_loss': loss, 'val_step_IoU': iou}
 
     # Called at the end of the validation epoch with the outputs of all validation steps.
     def validation_epoch_end(self, outputs):
@@ -118,7 +129,7 @@ class Lightning_Unet(pl.LightningModule):
         parameters defined here will be available to the model through self.hparams
         """
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        parser.add_argument("--batch_size", type=int, default=1, help='Batch size', dest='batch_size')
+        parser.add_argument("--batch_size", type=int, default=2, help='Batch size', dest='batch_size')
         parser.add_argument("--learning_rate", type=float, default=1e-3, help='Learning rate')
         parser.add_argument("--normalization", type=str, default='Group', help='the way of normalization')
         parser.add_argument("--down_sample", type=str, default="max", help="the way to down sample")

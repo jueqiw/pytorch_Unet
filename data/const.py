@@ -1,11 +1,16 @@
 from pathlib import Path
 import os
+import sys
+import re
 
 SIZE = 128
-COMPUTECANADA = False
+COMPUTECANADA = True
 
+data_dir = ""
 if COMPUTECANADA:
     SIZE = 128
+    args = sys.argv[1:]
+    data_dir = list(filter(lambda x: re.match('--data_dir=*', x) is not None, args))[0][11:]
 else:
     SIZE = 64
 
@@ -22,20 +27,13 @@ else:
 #
 # ADNI_LABEL = "brain_extraction"
 
-data_dir = ""
 
-
-def get_data_dir(pharams_data_dir):
-    data_dir = pharams_data_dir
-
+print(f"out of the function data_dir: {data_dir}")
 
 if COMPUTECANADA:
     DATA_ROOT = Path(data_dir) / "work"
 else:
     DATA_ROOT = Path(__file__).resolve().parent.parent.parent / "Data"
-
-# for file in os.listdir(DATA_ROOT):
-#     print(file)
 
 
 CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"

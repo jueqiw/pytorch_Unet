@@ -7,7 +7,6 @@ import nibabel as nib
 
 
 class MRI:
-
     def __init__(self, dataset, file_name):
         """
         :param dataset: dataset name

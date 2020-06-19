@@ -1,6 +1,6 @@
 git init
 git add ./*
-git rm ./summary/Unet/*
+git rm ./log/
 git rm ./upload.bat
-git commit -m "using padding and cropping to make Unet can put in different image size"
+git commit -m "fix the path issue"
 git push -u pytorchstripping master -f
