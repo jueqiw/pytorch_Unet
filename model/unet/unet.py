@@ -30,7 +30,6 @@ class UNet(nn.Module):
             initial_dilation: Optional[int] = None,
             dropout: float = 0.3,
             monte_carlo_dropout: float = 0.3,
-            all_size_input: bool = False,
             ):
         super().__init__()
         depth = num_encoding_blocks  # 3
@@ -54,7 +53,6 @@ class UNet(nn.Module):
             activation=activation,
             # initial_dilation=initial_dilation,
             dropout=dropout,
-            all_size_input=all_size_input,
         )
 
         in_channels = self.encoder.out_channels  # 32
@@ -74,7 +72,6 @@ class UNet(nn.Module):
             activation=activation,
             # initial_dilation=self.encoder.dilation,
             dropout=dropout,
-            all_size_input=all_size_input,
         )
 
         # Monte Carlo dropout

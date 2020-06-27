@@ -5,12 +5,10 @@ import re
 
 SIZE = 128
 COMPUTECANADA = True
-
 data_dir = ""
+
 if COMPUTECANADA:
     SIZE = 128
-    args = sys.argv[1:]
-    data_dir = list(filter(lambda x: re.match('--data_dir=*', x) is not None, args))[0][11:]
 else:
     SIZE = 64
 
@@ -28,10 +26,11 @@ else:
 # ADNI_LABEL = "brain_extraction"
 
 
-print(f"out of the function data_dir: {data_dir}")
+# data_dir = os.environ.get("SLURM_TMPDIR")
 
 if COMPUTECANADA:
-    DATA_ROOT = Path(data_dir) / "work"
+    DATA_ROOT = Path("/project/6005889/U-Net_MRI-Data").resolve()
+    # DATA_ROOT = Path(str(data_dir)).resolve() / "work"
 else:
     DATA_ROOT = Path(__file__).resolve().parent.parent.parent / "Data"
 

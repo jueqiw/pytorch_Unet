@@ -1,4 +1,7 @@
+from typing import Union, List
+
 import pytorch_lightning as pl
+
 from torchio import DATA
 from torch.utils.data import DataLoader
 from data.get_subjects import get_subjects
@@ -7,10 +10,9 @@ from data.transform import get_train_transforms, get_val_transform
 from argparse import ArgumentParser
 from data.const import SIZE
 from model.unet.unet import UNet
-from utils.loss import get_dice_score
+from utils.loss import get_score, dice_loss
 import torch.nn.functional as F
 from postprocess.visualize import log_all_info
-import multiprocessing
 from torch import Tensor
 import torchio
 import torch
@@ -27,9 +29,9 @@ class Lightning_Unet(pl.LightningModule):
             out_channels_first_layer=8,
             normalization=hparams.normalization,
             upsampling_type='conv',
+            activaction="LeakyReLU",
             padding=2,
             dropout=0,
-            all_size_input=hparams.all_size_input,
         )
         if COMPUTECANADA:
             datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
@@ -38,10 +40,10 @@ class Lightning_Unet(pl.LightningModule):
         subjects = get_subjects(datasets)
         num_subjects = len(subjects)
         num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
-        # self.training_subjects = subjects[:num_training_subjects]
-        # self.validation_subjects = subjects[num_training_subjects:]
-        self.training_subjects = subjects[:10]
-        self.validation_subjects = subjects[10:15]
+        self.training_subjects = subjects[:num_training_subjects]
+        self.validation_subjects = subjects[num_training_subjects:]
+        # self.training_subjects = subjects[:10]
+        # self.validation_subjects = subjects[10:15]
 
     def forward(self, x: Tensor) -> Tensor:
         return self.unet(x)
@@ -51,8 +53,9 @@ class Lightning_Unet(pl.LightningModule):
         train_imageDataset = torchio.ImagesDataset(self.training_subjects, transform=training_transform)
         training_loader = DataLoader(train_imageDataset,
                                      batch_size=self.hparams.batch_size,
-                                     # batch_size=1,
-                                     num_workers=multiprocessing.cpu_count())
+                                     # num_workers=multiprocessing.cpu_count()) would cause RuntimeError('DataLoader
+                                     # worker (pid(s) {}) exited unexpectedly' if don't do that
+                                     num_workers=4)
         print('Training set:', len(train_imageDataset), 'subjects')
         return training_loader
 
@@ -60,68 +63,76 @@ class Lightning_Unet(pl.LightningModule):
         val_transform = get_val_transform()
         val_imageDataset = torchio.ImagesDataset(self.validation_subjects, transform=val_transform)
         val_loader = DataLoader(val_imageDataset,
-                                batch_size=1,  # always one because using different img size
-                                # batch_size=2,
-                                num_workers=multiprocessing.cpu_count())
+                                batch_size=self.hparams.batch_size * 2,
+                                # num_workers=multiprocessing.cpu_count())
+                                num_workers=4)
         print('Validation set:', len(val_imageDataset), 'subjects')
         return val_loader
+
+    # def test_dataloader(self) -> Union[DataLoader, List[DataLoader]]:
+    #     pass
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=1e-3)  # ??
         return optimizer
 
-    def training_step(self, batch, batch_idx):
+    def _prepare_data(self, batch):
         inputs, targets = batch["img"][DATA], batch["label"][DATA]
-        print(f"training max targets: {torch.max(targets)}")
-        print(f"training min targets: {torch.min(targets)}")
+        if torch.isnan(inputs).any():
+            print("there is nan in input data!")
+            inputs[inputs != inputs] = 0
+        if torch.isnan(targets).any():
+            print("there is nan in targets data!")
+            targets[targets != targets] = 0
+        # making the label as binary, it is very strange because if the label is not binary
+        # the whole model cannot learn at all
+        target_bin = torch.zeros(size=targets.size()).type_as(inputs)
+        target_bin[targets > 0.5] = 1
+        return inputs, target_bin
+
+    def training_step(self, batch, batch_idx):
+        inputs, targets = self._prepare_data(batch)
+        # print(f"training input range: {torch.min(inputs)} - {torch.max(inputs)}")
         logits = self(inputs)
-        prob = torch.sigmoid(logits)
-        dice, iou = get_dice_score(prob, targets)
+        probs = torch.sigmoid(logits)
+        dice, iou, _, _ = get_score(probs, targets)
         if batch_idx != 0 and batch_idx == 25:  # every epoch only save one fig
-        # if True:
-            input, _ = inputs.chunk(inputs.size()[0], 0)  # split into 1 in the dimension 0
-            target, _ = targets.chunk(targets.size()[0], 0)  # split into 1 in the dimension 0
-            logit, _ = logits.chunk(logits.size()[0], 0)  # split into 1 in the dimension 0
-            log_all_info(self, input, target, logit, batch_idx)
-        loss = F.binary_cross_entropy_with_logits(logits, targets)
-        tensorboard_logs = {"train_loss": loss.mean(), "train_IoU": iou.mean(), "train_dice": dice.mean()}
+            input = inputs.chunk(inputs.size()[0], 0)[0]  # split into 1 in the dimension 0
+            target = targets.chunk(targets.size()[0], 0)[0]  # split into 1 in the dimension 0
+            prob = probs.chunk(probs.size()[0], 0)[0]  # split into 1 in the dimension 0
+            log_all_info(self, input, target, prob, batch_idx)
+        # loss = F.binary_cross_entropy_with_logits(logits, targets)
+        loss = dice_loss(probs, targets)
+        tensorboard_logs = {"train_loss": loss, "train_IoU": iou, "train_dice": dice}
         return {'loss': loss, "log": tensorboard_logs}
 
     def validation_step(self, batch, batch_id):
-        inputs, targets = batch["img"][DATA], batch["label"][DATA]
-        print(f"validation max targets: {torch.max(targets)}")
-        print(f"validation min targets: {torch.min(targets)}")
-        if not self.hparams.all_size_input:
-            inputs = F.interpolate(batch["img"][DATA], size=(SIZE, SIZE, SIZE))
-            logits = self(inputs)
-            shape = targets.shape
-            logits = F.interpolate(logits, size=(shape[2], shape[3], shape[4]))
-            prob = torch.sigmoid(logits)
-        else:
-            logits = self(inputs)
-            prob = torch.sigmoid(logits)
-        loss = F.binary_cross_entropy_with_logits(logits, targets, reduction="mean")
-        if loss < 0:
-            print(f"max prob: {torch.max(prob)}")
-            print(f"min prob: {torch.min(prob)}")
-            print(f"loss: {loss.item()}")
-        dice, iou = get_dice_score(prob, targets)
-        if iou.mean() > 1.0:  # need to fix the initial part
-            print(f"prob max: {torch.max(prob)}")
-            print(f"target max: {torch.max(targets)}")
-            print(f"prob shape: {prob.shape}")
-            print(f"target shape: {targets.shape}")
-            print(f"iou: {iou.mean()}")
-            raise Exception("val_IoU > 1 ???")
-        return {'val_step_loss': loss, 'val_step_IoU': iou}
+        inputs, targets = self._prepare_data(batch)
+        # print(f"validation input range: {torch.min(inputs)} - {torch.max(inputs)}")
+        logits = self(inputs)
+        probs = torch.sigmoid(logits)
+        loss = dice_loss(probs, targets)
+        dice, iou, sensitivity, specificity = get_score(probs, targets)
+        return {'val_step_loss': loss,
+                'val_step_dice': dice,
+                'val_step_IoU': iou,
+                "val_step_sensitivity": sensitivity,
+                "val_step_specificity": specificity
+                }
 
     # Called at the end of the validation epoch with the outputs of all validation steps.
     def validation_epoch_end(self, outputs):
         # torch.stack: Concatenates sequence of tensors along a new dimension.
         avg_loss = torch.stack([x['val_step_loss'] for x in outputs]).mean()
-        avg_val_IoU = torch.stack([x['val_step_IoU'] for x in outputs]).mean()
-        tensorboard_logs = {'val_loss': avg_loss, 'val_IoU': avg_val_IoU}
-        return {'val_loss': avg_loss, 'val_IoU': avg_val_IoU, "log": tensorboard_logs}
+        avg_val_dice = torch.stack([x['val_step_dice'] for x in outputs]).mean()
+        tensorboard_logs = {
+            "val_loss": outputs[0]['val_step_loss'],  # the outputs is a dict wrapped in a list
+            "val_dice": outputs[0]['val_step_dice'],
+            "val_IoU": outputs[0]['val_step_IoU'],
+            "val_sensitivity": outputs[0]['val_step_sensitivity'],
+            "val_specificity": outputs[0]['val_step_specificity']
+        }
+        return {"val_loss": avg_loss, "val_dice": avg_val_dice, 'log': tensorboard_logs}
 
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser) -> ArgumentParser:
@@ -135,7 +146,4 @@ class Lightning_Unet(pl.LightningModule):
         parser.add_argument("--down_sample", type=str, default="max", help="the way to down sample")
         parser.add_argument("--loss", type=str, default="BCEWL", help='Loss Function')
         parser.add_argument("--run", dest='run', type=int, default=1, help='run times')
-        parser.add_argument("--all_size_input", dest='all_size_input', type=bool, default=False, help='whether the '
-                                                                                                      'input is not '
-                                                                                                      'resize')
         return parser

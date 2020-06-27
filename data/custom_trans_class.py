@@ -27,3 +27,13 @@ class ToResize(Transform):
             image_dict[DATA] = F.interpolate(image_dict[DATA].unsqueeze(0), size=(SIZE, SIZE, SIZE))
             image_dict[DATA] = image_dict[DATA].squeeze(0)
         return sample
+
+
+class ToResize_only_image(Transform):
+    """Only Resize the MR image
+    """
+    def apply_transform(self, sample: Subject) -> dict:
+        for image_dict in sample.get_images(intensity_only=False):
+            image_dict[DATA] = F.interpolate(image_dict[DATA].unsqueeze(0), size=(SIZE, SIZE, SIZE))
+            image_dict[DATA] = image_dict[DATA].squeeze(0)
+        return sample

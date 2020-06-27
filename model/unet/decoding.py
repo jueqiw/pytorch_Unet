@@ -32,7 +32,6 @@ class Decoder(nn.Module):
             activation: Optional[str] = 'ReLU',
             # initial_dilation: Optional[int] = None,
             dropout: float = 0.3,
-            all_size_input: bool = False,
             ):
         super().__init__()
         upsampling_type = fix_upsampling_type(upsampling_type, dimensions)
@@ -50,8 +49,6 @@ class Decoder(nn.Module):
                 # dilation=self.dilation,
                 dropout=dropout,
                 first_decoder_block=first_decoding_block,
-                num_block=i,
-                all_size_input=all_size_input,
             )
             self.decoding_blocks.append(decoding_block)
             in_channels_skip_connection //= 2
@@ -80,13 +77,10 @@ class DecodingBlock(nn.Module):
             # dilation: Optional[int] = None,
             dropout: float = 0,
             first_decoder_block: bool = True,
-            num_block: int = 0,
-            all_size_input: bool = False,
             ):
         super().__init__()
 
         # self.residual = residual
-        self.all_size_input = all_size_input
 
         if upsampling_type == 'conv':
             if first_decoder_block:
@@ -99,7 +93,6 @@ class DecodingBlock(nn.Module):
         else:
             self.upsample = get_upsampling_layer(upsampling_type)
 
-        self.num_block = num_block
         in_channels_first = in_channels_skip_connection * 2
         out_channels = in_channels_skip_connection
 
@@ -142,8 +135,8 @@ class DecodingBlock(nn.Module):
 
     def forward(self, skip_connection, x):
         x = self.upsample(x)  # upConvLayer
-        if self.all_size_input:
-            x = self.crop(x, skip_connection)  # crop x according skip_connection
+        # if self.all_size_input:
+        #     x = self.crop(x, skip_connection)  # crop x according skip_connection
         x = torch.cat((skip_connection, x), dim=CHANNELS_DIMENSION)
         x = self.conv1(x)
         return x
@@ -156,16 +149,6 @@ class DecodingBlock(nn.Module):
         diffT = skip.size()[2] - x.size()[2]
         diffH = skip.size()[3] - x.size()[3]
         diffW = skip.size()[4] - x.size()[4]
-
-        if self.num_block % 2 == 0:
-            x = F.pad(x, [diffW // 2, diffW - diffW // 2,
-                          diffH // 2, diffH - diffH // 2,
-                          diffT // 2, diffT - diffT // 2])
-        else:
-            x = F.pad(x, [diffW - diffW // 2, diffW // 2,
-                          diffH - diffH // 2, diffH // 2,
-                          diffT - diffT // 2, diffT // 2])
-
         return x
 
 

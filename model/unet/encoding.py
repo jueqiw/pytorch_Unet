@@ -43,7 +43,6 @@ class Encoder(nn.Module):
                 # dilation=self.dilation,
                 dropout=dropout,
                 num_block=i,
-                all_size_input=all_size_input,
             )
             is_first_block = False
             self.encoding_blocks.append(encoding_block)
@@ -87,12 +86,10 @@ class EncodingBlock(nn.Module):
             # dilation: Optional[int] = None,
             dropout: float = 0.3,
             num_block: int = 0,
-            all_size_input: bool = False,
     ):
         super().__init__()
 
         self.num_block = num_block
-        self.all_size_input = all_size_input
         # self.preactivation = preactivation
         # self.normalization = normalization
 
@@ -146,12 +143,6 @@ class EncodingBlock(nn.Module):
         else:
             skip_connection = x
             x = self.downsample(x)
-            if self.all_size_input:
-                if self.num_block % 2:
-                    pd = (0, 1, 0, 1, 0, 1)
-                else:
-                    pd = (1, 0, 1, 0, 1, 0)
-                x = F.pad(x, pd, "constant", 0)
         return x, skip_connection
 
     @property
