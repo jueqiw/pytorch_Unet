@@ -3,9 +3,12 @@ import os
 import sys
 import re
 
-SIZE = 128
-COMPUTECANADA = True
-data_dir = ""
+TMP = os.environ.get("SLURM_TMPDIR")
+
+COMPUTECANADA = False
+
+if TMP:  # running inside Compute Canada
+    COMPUTECANADA = True
 
 if COMPUTECANADA:
     SIZE = 128
@@ -26,11 +29,10 @@ else:
 # ADNI_LABEL = "brain_extraction"
 
 
-# data_dir = os.environ.get("SLURM_TMPDIR")
+data_dir = os.environ.get("SLURM_TMPDIR")  # ?????
 
 if COMPUTECANADA:
-    DATA_ROOT = Path("/project/6005889/U-Net_MRI-Data").resolve()
-    # DATA_ROOT = Path(str(data_dir)).resolve() / "work"
+    DATA_ROOT = Path(str(data_dir)).resolve() / "work"
 else:
     DATA_ROOT = Path(__file__).resolve().parent.parent.parent / "Data"
 
@@ -38,7 +40,6 @@ else:
 CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
 CC359_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//STAPLE"
 CC359_MANUAL_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//Manual"
-
 NFBS_DATASET_DIR = DATA_ROOT / "NFBS//NFBS_Dataset"
 
 ADNI_DATASET_DIR_1 = DATA_ROOT / "ADNI"

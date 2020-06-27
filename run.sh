@@ -41,4 +41,5 @@ tensorboard --logdir="$LOG_DIR" --host 0.0.0.0 & python3 /home/jueqi/projects/de
        --TensorBoardLogger="$LOG_DIR"
 
 
+
 #python3 /home/jueqi/projects/def-jlevman/jueqi/pytorch_Unet/data/const.py

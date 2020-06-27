@@ -21,5 +21,5 @@ python /home/jueqi/projects/def-jlevman/jueqi/Unet1/get_all_readable_file.py
 
 echo "$(date +"%T"):  taring data"
 cd work
-tar -cf /project/6005889/U-Net_MRI-Data/good_data.tar ADNI/ CalgaryCampinas359/ NFBS/
+tar -cf /project/6005889/U-Net_MRI-Data/crop_data.tar img/ label/
 echo "$(date +"%T"):  tared data"

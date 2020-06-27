@@ -34,6 +34,7 @@ def get_train_transforms() -> Compose:
             RandomAffine(): 0.8,
             RandomElasticDeformation(): 0.2,
         }),
+        Resample(2),
         ToResize(),
         ZNormalization(masking_method=ZNormalization.mean),  # Subtract mean and divide by standard deviation.
     ])

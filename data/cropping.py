@@ -1,4 +1,7 @@
-"""Some code are from https://github.com/MIC-DKFZ/nnUNet/blob/master/nnunet/preprocessing/cropping.py
+"""
+using Kmeans to make the threshold and do crop on the MR image
+
+Some code are from https://github.com/MIC-DKFZ/nnUNet/blob/master/nnunet/preprocessing/cropping.py
 https://github.com/DM-Berger/autocrop/blob/dec40a194f3ace2d024fd24d8faa503945821015/test/test_masking.py
 """
 #    Copyright 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
@@ -20,20 +23,25 @@ import shutil
 from multiprocessing import Pool
 from collections import OrderedDict
 from sklearn.cluster import MiniBatchKMeans
+from const import COMPUTECANADA, DATA_ROOT
 from pathlib import Path
 from glob import glob
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import pickle
+import tqdm
 import nibabel as nib
+import multiprocessing as mp
 from functools import reduce
 import copy
 
 
+# have similar outcome to the kmeans, but kmeans have dramtically better result on some images
 def create_nonzero_mask_percentile_80(data):
     from scipy.ndimage import binary_fill_holes
     assert len(data.shape) == 4 or len(data.shape) == 3, "data must have shape (C, X, Y, Z) or shape (C, X, Y)"
     nonzero_mask = np.zeros(data.shape, dtype=bool)
-    this_mask = (data > np.percentile(img, 80))
+    this_mask = (data > np.percentile(img, 70))
     nonzero_mask = nonzero_mask | this_mask
     nonzero_mask = binary_fill_holes(nonzero_mask)
     return nonzero_mask
@@ -52,9 +60,6 @@ def create_nonzero_mask_kmeans(data):
     gs = [km.labels_ == i for i in range(4)]
     maxs = sorted([np.max(flat[g]) for g in gs])
     thresh = maxs[0]
-
-    mask = np.zeros_like(img, dtype=int)
-    mask[img > thresh] = 1
 
     this_mask = (data > thresh)
     nonzero_mask = nonzero_mask | this_mask
@@ -92,27 +97,29 @@ def crop_to_nonzero(data, seg):
 
     data = crop_to_bbox(data, bbox_kmeans)
     seg = crop_to_bbox(seg, bbox_kmeans)
-    return data, seg, bbox_kmeans
+    return data, seg
+
+
+def crop_from_file(img_path, label_path):
+    properties = OrderedDict()
+    img, label = nib.load(img_path), nib.load(label_path)
+
+    data_np = img.get_data().astype(np.uint8)
+    seg_npy = label.get_data().squeeze().astype(np.float)
+    return data_np, seg_npy, img.affine, label.affine
 
 
 class ImageCropper(object):
-    def __init__(self, num_threads, output_folder=None):
+    def __init__(self, num_threads, data_path_list, data_dir):
         """
-        Using Kmeans or percentile
+        Using Kmeans or percentile to do crop on MRI file
         :param num_threads:
         :param output_folder: whete to store the cropped data
         :param list_of_files:
         """
-        self.output_folder = output_folder
         self.num_threads = num_threads
-
-
-    @staticmethod
-    def crop_from_file(img_path, label_path):
-        properties = OrderedDict()
-        data_np = nib.load(img_path).get_data().astype(np.uint8)
-        seg_npy = nib.load(label_path).get_data().squeeze().astype(np.float)
-        return data_np, seg_npy
+        self.data_path_list = data_path_list
+        self.data_dir = data_dir
 
     def load_crop_save(self, case, case_identifier, overwrite_existing=False):
         try:
@@ -134,9 +141,6 @@ class ImageCropper(object):
 
     def _load_crop_save_star(self, args):
         return self.load_crop_save(*args)
-
-    def get_patient_identifiers_from_cropped_files(self):
-        return [i.split("/")[-1][:-4] for i in self.get_list_of_cropped_files()]
 
     def run_cropping(self, list_of_files, overwrite_existing=False, output_folder=None):
         """
@@ -199,10 +203,32 @@ def get_2D_image(img):
     return img[:, :, img.shape[2] // 2]
 
 
+def run_crop(idx, img_path, label_path, img_folder, label_folder):
+    print(f"Start processing No. {idx} file ...")
+    img, label, img_affine, label_affine = crop_from_file(img_path, label_path)
+    cropped_img, cropped_label = crop_to_nonzero(img, label)
+
+    cropped_img_file = nib.Nifti1Image(cropped_img, img_affine)
+    nib.save(cropped_img_file, img_folder / Path("%05d.nii.gz" % idx))
+    cropped_label_file = nib.Nifti1Image(cropped_label, label_affine)
+    nib.save(cropped_label_file, label_folder / Path("%05d.nii.gz" % idx))
+    print(f"Successfully save file No. {idx} file!")
+
+
 if __name__ == "__main__":
-    DATA_ROOT = Path(__file__).resolve().parent.parent.parent / "Data/all_different_size_img"
-    img_path = DATA_ROOT / "img"
-    label_path = DATA_ROOT / "label"
+    if COMPUTECANADA:
+        DATA_ROOT = Path(str(os.environ.get("SLURM_TMPDIR"))).resolve()
+        cropped_img_folder = DATA_ROOT / "work" / "img"
+        cropped_label_folder = DATA_ROOT / "work" / "label"
+    else:
+        DATA_ROOT = Path(__file__).resolve().parent.parent.parent / "Data/all_different_size_img"
+        img_path = DATA_ROOT / "img"
+        label_path = DATA_ROOT / "label"
+        cropped_img_folder = DATA_ROOT / "cropped" / "img"
+        cropped_label_folder = DATA_ROOT / "cropped" / "label"
+
+    os.system(f"rm -r {cropped_img_folder}")
+    os.system(f"rm -r {cropped_label_folder}")
 
     img_path_list = sorted([
         Path(f) for f in sorted(glob(f"{str(img_path)}/**/*.nii*", recursive=True))
@@ -211,21 +237,15 @@ if __name__ == "__main__":
         Path(f) for f in sorted(glob(f"{str(label_path)}/**/*.nii.gz", recursive=True))
     ])
 
-    idx = 0
-    percent = []
-    for img_path, label_path in zip(img_path_list, label_path_list):
-        img, label = ImageCropper.crop_from_file(img_path, label_path)
-        cropped_img, cropped_label, bbox_kmeans = crop_to_nonzero(img, label)
-        idx += 1
+    if not os.path.exists(DATA_ROOT / "cropped"):
+        os.mkdir(DATA_ROOT / "cropped")
+    if not os.path.exists(cropped_img_folder):
+        os.mkdir(cropped_img_folder)
+    if not os.path.exists(cropped_label_folder):
+        os.mkdir(cropped_label_folder)
 
+    for idx, img in enumerate(zip(img_path_list, label_path_list)):
+        run_crop(idx, img[0], img[1], cropped_img_folder, cropped_label_folder)
 
-
-
-
-
-
-
-        # show_save_img_and_label(img_2D, label_2D, bbox_percentile_80, bbox_kmeans, "./rectangle_image", idx)
-
-
+    # show_save_img_and_label(img_2D, label_2D, bbox_percentile_80, bbox_kmeans, "./rectangle_image", idx)
 
