@@ -31,8 +31,9 @@ import matplotlib.patches as patches
 import pickle
 import tqdm
 import nibabel as nib
-import multiprocessing as mp
+from time import ctime
 from functools import reduce
+
 import copy
 
 
@@ -109,77 +110,6 @@ def crop_from_file(img_path, label_path):
     return data_np, seg_npy, img.affine, label.affine
 
 
-class ImageCropper(object):
-    def __init__(self, num_threads, data_path_list, data_dir):
-        """
-        Using Kmeans or percentile to do crop on MRI file
-        :param num_threads:
-        :param output_folder: whete to store the cropped data
-        :param list_of_files:
-        """
-        self.num_threads = num_threads
-        self.data_path_list = data_path_list
-        self.data_dir = data_dir
-
-    def load_crop_save(self, case, case_identifier, overwrite_existing=False):
-        try:
-            print(case_identifier)
-            if overwrite_existing \
-                    or (not os.path.isfile(os.path.join(self.output_folder, "%s.npz" % case_identifier))
-                        or not os.path.isfile(os.path.join(self.output_folder, "%s.pkl" % case_identifier))):
-
-                data, seg, properties = self.crop_from_list_of_files(case[:-1], case[-1])
-
-                all_data = np.vstack((data, seg))
-                np.savez_compressed(os.path.join(self.output_folder, "%s.npz" % case_identifier), data=all_data)
-                with open(os.path.join(self.output_folder, "%s.pkl" % case_identifier), 'wb') as f:
-                    pickle.dump(properties, f)
-        except Exception as e:
-            print("Exception in", case_identifier, ":")
-            print(e)
-            raise e
-
-    def _load_crop_save_star(self, args):
-        return self.load_crop_save(*args)
-
-    def run_cropping(self, list_of_files, overwrite_existing=False, output_folder=None):
-        """
-        also copied ground truth nifti segmentation into the preprocessed folder so that we can use them for evaluation
-        on the cluster
-        :param list_of_files: list of list of files [[PATIENTID_TIMESTEP_0000.nii.gz], [PATIENTID_TIMESTEP_0000.nii.gz]]
-        :param overwrite_existing:
-        :param output_folder:
-        :return:
-        """
-        if output_folder is not None:
-            self.output_folder = output_folder
-
-        output_folder_gt = os.path.join(self.output_folder, "gt_segmentations")
-        maybe_mkdir_p(output_folder_gt)
-        for j, case in enumerate(list_of_files):
-            if case[-1] is not None:
-                shutil.copy(case[-1], output_folder_gt)
-
-        list_of_args = []
-        for j, case in enumerate(list_of_files):
-            case_identifier = get_case_identifier(case)
-            list_of_args.append((case, case_identifier, overwrite_existing))
-
-        p = Pool(self.num_threads)
-        p.map(self._load_crop_save_star, list_of_args)
-        p.close()
-        p.join()
-
-    def load_properties(self, case_identifier):
-        with open(os.path.join(self.output_folder, "%s.pkl" % case_identifier), 'rb') as f:
-            properties = pickle.load(f)
-        return properties
-
-    def save_properties(self, case_identifier, properties):
-        with open(os.path.join(self.output_folder, "%s.pkl" % case_identifier), 'wb') as f:
-            pickle.dump(properties, f)
-
-
 def show_save_img_and_label(img_2D, label_2D, bbox_percentile_80, bbox_kmeans, path, idx):
     img_2D = np.where(label_2D > 0.5, np.max(img_2D), img_2D)
     plt.imshow(img_2D)
@@ -204,7 +134,7 @@ def get_2D_image(img):
 
 
 def run_crop(idx, img_path, label_path, img_folder, label_folder):
-    print(f"Start processing No. {idx} file ...")
+    print(f"{ctime()}: Start processing No. {idx} file ...")
     img, label, img_affine, label_affine = crop_from_file(img_path, label_path)
     cropped_img, cropped_label = crop_to_nonzero(img, label)
 
@@ -212,7 +142,11 @@ def run_crop(idx, img_path, label_path, img_folder, label_folder):
     nib.save(cropped_img_file, img_folder / Path("%05d.nii.gz" % idx))
     cropped_label_file = nib.Nifti1Image(cropped_label, label_affine)
     nib.save(cropped_label_file, label_folder / Path("%05d.nii.gz" % idx))
-    print(f"Successfully save file No. {idx} file!")
+    print(f"{ctime()}: Successfully save file No. {idx} file!")
+
+
+def _run_crop(args):
+    run_crop(*args)
 
 
 if __name__ == "__main__":
@@ -244,8 +178,14 @@ if __name__ == "__main__":
     if not os.path.exists(cropped_label_folder):
         os.mkdir(cropped_label_folder)
 
-    for idx, img in enumerate(zip(img_path_list, label_path_list)):
-        run_crop(idx, img[0], img[1], cropped_img_folder, cropped_label_folder)
+    pool = Pool()
+    arg_list = [(idx, img[0], img[1], cropped_img_folder, cropped_label_folder) for idx, img in enumerate(zip(img_path_list, label_path_list))]
+    print(f"{ctime()}: starting ...")
+    pool.map(_run_crop, arg_list)
 
+    # for idx, img in enumerate(zip(img_path_list, label_path_list)):
+    #     run_crop(idx, img[0], img[1], cropped_img_folder, cropped_label_folder)
+
+    print(f"{ctime()}: ending ...")
     # show_save_img_and_label(img_2D, label_2D, bbox_percentile_80, bbox_kmeans, "./rectangle_image", idx)
 
