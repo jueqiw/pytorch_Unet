@@ -50,7 +50,7 @@ def main(hparams):
     trainer = Trainer(
         gpus=hparams.gpus,
         # amp_level='O2', precision=16,
-        num_nodes=8, distributed_backend='ddp',
+        # num_nodes=8, distributed_backend='ddp',
         check_val_every_n_epoch=1,
         # log every k batches instead
         row_log_interval=10,

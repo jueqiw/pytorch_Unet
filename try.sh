@@ -15,11 +15,12 @@ echo "$(date +"%T"):  Copying data"
 tar -xf /project/6005889/U-Net_MRI-Data/data.tar -C work && echo "$(date +"%T"):  Copied data"
 # Now do my computations here on the local disk using the contents of the extracted archive...
 
-## The computations are done, so cSlean up the data set.S..
 
-python /home/jueqi/projects/def-jlevman/jueqi/Unet1/get_all_readable_file.py
+
+python3 /home/jueqi/projects/def-jlevman/jueqi/Unet1/cropping.py
 
 echo "$(date +"%T"):  taring data"
 cd work
-tar -cf /project/6005889/U-Net_MRI-Data/crop_data.tar img/ label/
+## The computations are done, so clean up the data set...
+tar -cf /project/6005889/U-Net_MRI-Data/cropped_data.tar img/ label/
 echo "$(date +"%T"):  tared data"

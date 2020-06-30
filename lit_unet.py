@@ -1,7 +1,5 @@
 from typing import Union, List
-
 import pytorch_lightning as pl
-
 from torchio import DATA
 from torch.utils.data import DataLoader
 from data.get_subjects import get_subjects
@@ -29,7 +27,6 @@ class Lightning_Unet(pl.LightningModule):
             out_channels_first_layer=8,
             normalization=hparams.normalization,
             upsampling_type='conv',
-            activaction="LeakyReLU",
             padding=2,
             dropout=0,
         )
@@ -40,10 +37,10 @@ class Lightning_Unet(pl.LightningModule):
         subjects = get_subjects(datasets)
         num_subjects = len(subjects)
         num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
-        self.training_subjects = subjects[:num_training_subjects]
-        self.validation_subjects = subjects[num_training_subjects:]
-        # self.training_subjects = subjects[:10]
-        # self.validation_subjects = subjects[10:15]
+        # self.training_subjects = subjects[:num_training_subjects]
+        # self.validation_subjects = subjects[num_training_subjects:]
+        self.training_subjects = subjects[:10]
+        self.validation_subjects = subjects[10:15]
 
     def forward(self, x: Tensor) -> Tensor:
         return self.unet(x)
@@ -55,7 +52,7 @@ class Lightning_Unet(pl.LightningModule):
                                      batch_size=self.hparams.batch_size,
                                      # num_workers=multiprocessing.cpu_count()) would cause RuntimeError('DataLoader
                                      # worker (pid(s) {}) exited unexpectedly' if don't do that
-                                     num_workers=4)
+                                     num_workers=8)
         print('Training set:', len(train_imageDataset), 'subjects')
         return training_loader
 
@@ -63,9 +60,9 @@ class Lightning_Unet(pl.LightningModule):
         val_transform = get_val_transform()
         val_imageDataset = torchio.ImagesDataset(self.validation_subjects, transform=val_transform)
         val_loader = DataLoader(val_imageDataset,
-                                batch_size=self.hparams.batch_size * 2,
+                                batch_size=self.hparams.batch_size * 2,  # always one because using different img size
                                 # num_workers=multiprocessing.cpu_count())
-                                num_workers=4)
+                                num_workers=8)
         print('Validation set:', len(val_imageDataset), 'subjects')
         return val_loader
 
@@ -108,9 +105,10 @@ class Lightning_Unet(pl.LightningModule):
 
     def validation_step(self, batch, batch_id):
         inputs, targets = self._prepare_data(batch)
+        print(f"input shape: {inputs.shape}, targets shape: {targets.shape}")
         # print(f"validation input range: {torch.min(inputs)} - {torch.max(inputs)}")
         logits = self(inputs)
-        probs = torch.sigmoid(logits)
+        probs = torch.sigmoid(logits)  # compare the position
         loss = dice_loss(probs, targets)
         dice, iou, sensitivity, specificity = get_score(probs, targets)
         return {'val_step_loss': loss,

@@ -22,8 +22,8 @@ import numpy as np
 import shutil
 from multiprocessing import Pool
 from collections import OrderedDict
-from sklearn.cluster import MiniBatchKMeans
-from const import COMPUTECANADA, DATA_ROOT
+from sklearn.cluster import KMeans, MiniBatchKMeans
+from data.const import COMPUTECANADA, DATA_ROOT, ADNI_DATASET_DIR_1, CC359_DATASET_DIR, NFBS_DATASET_DIR
 from pathlib import Path
 from glob import glob
 import matplotlib.pyplot as plt
@@ -32,8 +32,9 @@ import pickle
 import tqdm
 import nibabel as nib
 from time import ctime
+from data.get_path import get_path
+# from get_path import get_path
 from functools import reduce
-
 import copy
 
 
@@ -42,7 +43,7 @@ def create_nonzero_mask_percentile_80(data):
     from scipy.ndimage import binary_fill_holes
     assert len(data.shape) == 4 or len(data.shape) == 3, "data must have shape (C, X, Y, Z) or shape (C, X, Y)"
     nonzero_mask = np.zeros(data.shape, dtype=bool)
-    this_mask = (data > np.percentile(img, 70))
+    this_mask = (data > np.percentile(data, 70))
     nonzero_mask = nonzero_mask | this_mask
     nonzero_mask = binary_fill_holes(nonzero_mask)
     return nonzero_mask
@@ -52,14 +53,20 @@ def create_nonzero_mask_kmeans(data):
     from scipy.ndimage import binary_fill_holes
     assert len(data.shape) == 4 or len(data.shape) == 3, "data must have shape (C, X, Y, Z) or shape (C, X, Y)"
     nonzero_mask = np.zeros(data.shape, dtype=bool)
-    flat = data.ravel()
+    flat = data.ravel()  # Return a contiguous flattened array.
 
     # using 1 dimension kMeans here to compute the thresholds
     # using code from
     # https://github.com/DM-Berger/autocrop/blob/dec40a194f3ace2d024fd24d8faa503945821015/test/test_masking.py#L19-L25
-    km = MiniBatchKMeans(4, batch_size=1000).fit(flat.reshape(-1, 1))
+    # n_job=The number of OpenMP threads to use for the computation.
+    # batch_size controls the number of randomly selected observations in each batch.
+    # The larger the the size of the batch, the more computationally costly the training process.
+    # Increasing the batch size may also help avoid reassignment triggering by some clusters becoming to small
+    # just from sampling variation.
+    km = MiniBatchKMeans(n_clusters=4, batch_size=1000).fit(flat.reshape(-1, 1))
+    # km = KMeans(n_clusters=4, n_jobs=1).fit(flat.reshape(-1, 1))  # more slowly
     gs = [km.labels_ == i for i in range(4)]
-    maxs = sorted([np.max(flat[g]) for g in gs])
+    maxs = sorted([np.max(flat[g]) for g in gs])  # choose the max value in the min group
     thresh = maxs[0]
 
     this_mask = (data > thresh)
@@ -133,16 +140,24 @@ def get_2D_image(img):
     return img[:, :, img.shape[2] // 2]
 
 
-def run_crop(idx, img_path, label_path, img_folder, label_folder):
-    print(f"{ctime()}: Start processing No. {idx} file ...")
-    img, label, img_affine, label_affine = crop_from_file(img_path, label_path)
-    cropped_img, cropped_label = crop_to_nonzero(img, label)
+def run_crop(img_path, label_path, img_folder, label_folder):
+    # get the file name
+    _, filename = os.path.split(img_path)
+    filename, _ = os.path.splitext(filename)
 
+    print(f"{ctime()}: Start processing {filename} ...")
+    try:
+        img, label, img_affine, label_affine = crop_from_file(img_path, label_path)
+    except OSError:
+        print("OSError! skip file!")
+        return
+
+    cropped_img, cropped_label = crop_to_nonzero(img, label)
     cropped_img_file = nib.Nifti1Image(cropped_img, img_affine)
-    nib.save(cropped_img_file, img_folder / Path("%05d.nii.gz" % idx))
+    nib.save(cropped_img_file, img_folder / Path(f"{filename}.nii.gz"))
     cropped_label_file = nib.Nifti1Image(cropped_label, label_affine)
-    nib.save(cropped_label_file, label_folder / Path("%05d.nii.gz" % idx))
-    print(f"{ctime()}: Successfully save file No. {idx} file!")
+    nib.save(cropped_label_file, label_folder / Path(f"{filename}.nii.gz"))
+    print(f"{ctime()}: Successfully save file {filename} file!")
 
 
 def _run_crop(args):
@@ -155,21 +170,11 @@ if __name__ == "__main__":
         cropped_img_folder = DATA_ROOT / "work" / "img"
         cropped_label_folder = DATA_ROOT / "work" / "label"
     else:
-        DATA_ROOT = Path(__file__).resolve().parent.parent.parent / "Data/all_different_size_img"
-        img_path = DATA_ROOT / "img"
-        label_path = DATA_ROOT / "label"
+        DATA_ROOT = Path(__file__).resolve().parent.parent / "Data"
+        img_path = DATA_ROOT / "all_different_size_img/img"
+        label_path = DATA_ROOT / "all_different_size_img/label"
         cropped_img_folder = DATA_ROOT / "cropped" / "img"
         cropped_label_folder = DATA_ROOT / "cropped" / "label"
-
-    os.system(f"rm -r {cropped_img_folder}")
-    os.system(f"rm -r {cropped_label_folder}")
-
-    img_path_list = sorted([
-        Path(f) for f in sorted(glob(f"{str(img_path)}/**/*.nii*", recursive=True))
-    ])
-    label_path_list = sorted([
-        Path(f) for f in sorted(glob(f"{str(label_path)}/**/*.nii.gz", recursive=True))
-    ])
 
     if not os.path.exists(DATA_ROOT / "cropped"):
         os.mkdir(DATA_ROOT / "cropped")
@@ -178,14 +183,32 @@ if __name__ == "__main__":
     if not os.path.exists(cropped_label_folder):
         os.mkdir(cropped_label_folder)
 
-    pool = Pool()
-    arg_list = [(idx, img[0], img[1], cropped_img_folder, cropped_label_folder) for idx, img in enumerate(zip(img_path_list, label_path_list))]
-    print(f"{ctime()}: starting ...")
-    pool.map(_run_crop, arg_list)
+    img_path_list = sorted([
+        Path(f) for f in sorted(glob(f"{str(img_path)}/**/*.nii*", recursive=True))
+    ])
+    label_path_list = sorted([
+        Path(f) for f in sorted(glob(f"{str(label_path)}/**/*.nii.gz", recursive=True))
+    ])
 
-    # for idx, img in enumerate(zip(img_path_list, label_path_list)):
-    #     run_crop(idx, img[0], img[1], cropped_img_folder, cropped_label_folder)
+    print(f"{ctime()}: starting ...")
+    # pool.map(_run_crop, arg_list[:16])
+
+    if COMPUTECANADA:
+        datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
+    else:
+        datasets = [CC359_DATASET_DIR]
+
+    # for idx, mri in enumerate(get_path(datasets)):
+        # if not COMPUTECANADA:
+        # run_crop(idx, mri.img_path, mri.label_path, cropped_img_folder, cropped_label_folder)
+
+    idx = 0
+    for img_path, label_path in zip(img_path_list, label_path_list):
+        idx += 1
+        run_crop(img_path, label_path, cropped_img_folder, cropped_label_folder)
+
+    for mri in get_path(datasets):
+        run_crop(mri.img_path, mri.label_path, cropped_img_folder, cropped_label_folder)
 
     print(f"{ctime()}: ending ...")
     # show_save_img_and_label(img_2D, label_2D, bbox_percentile_80, bbox_kmeans, "./rectangle_image", idx)
-
