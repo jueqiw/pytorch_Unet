@@ -29,12 +29,18 @@ else:
 # ADNI_LABEL = "brain_extraction"
 
 
-data_dir = os.environ.get("SLURM_TMPDIR")  # ?????
+data_dir = os.environ.get("SLURM_TMPDIR")
 
 if COMPUTECANADA:
     DATA_ROOT = Path(str(data_dir)).resolve() / "work"
+    CROPPED_IMG = DATA_ROOT / "img"
+    CROPPED_LABEL = DATA_ROOT / "label"
 else:
     DATA_ROOT = Path(__file__).resolve().parent.parent.parent / "Data"
+    CROPPED_IMG = DATA_ROOT / "cropped/img"
+    CROPPED_LABEL = DATA_ROOT / "cropped/label"
+
+print(DATA_ROOT)
 
 
 CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
