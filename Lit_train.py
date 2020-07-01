@@ -59,7 +59,7 @@ def main(hparams):
         checkpoint_callback=checkpoint_callback,
         early_stop_callback=early_stop_callback,
         # runs 1 train, val, test  batch and program ends
-        fast_dev_run=False,
+        fast_dev_run=True,
         default_root_dir=default_root_dir,
         logger=tb_logger,
         max_epochs=10000,
@@ -69,7 +69,8 @@ def main(hparams):
 
     trainer.fit(model)
 
-    # trainer.test()
+    # (1) load the best checkpoint automatically (lightning tracks this for you)
+    trainer.test()
 
     # (3) test using a specific checkpoint
     # trainer.test(ckpt_path='/path/to/my_checkpoint.ckpt')

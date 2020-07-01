@@ -4,7 +4,7 @@ from torchio import DATA
 from torch.utils.data import DataLoader
 from data.get_subjects import get_subjects
 from data.const import CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1, COMPUTECANADA
-from data.transform import get_train_transforms, get_val_transform
+from data.transform import get_train_transforms, get_val_transform, get_test_transform
 from argparse import ArgumentParser
 from data.const import SIZE
 from model.unet.unet import UNet
@@ -34,13 +34,13 @@ class Lightning_Unet(pl.LightningModule):
             datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
         else:
             datasets = [CC359_DATASET_DIR]
-        subjects = get_subjects(datasets)
-        num_subjects = len(subjects)
+        self.subjects = get_subjects()
+        num_subjects = len(self.subjects)
         num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
-        # self.training_subjects = subjects[:num_training_subjects]
-        # self.validation_subjects = subjects[num_training_subjects:]
-        self.training_subjects = subjects[:10]
-        self.validation_subjects = subjects[10:15]
+        self.training_subjects = self.subjects[:num_training_subjects]
+        self.validation_subjects = self.subjects[num_training_subjects:]
+        # self.training_subjects = subjects[:10]
+        # self.validation_subjects = subjects[10:15]
 
     def forward(self, x: Tensor) -> Tensor:
         return self.unet(x)
@@ -60,15 +60,23 @@ class Lightning_Unet(pl.LightningModule):
         val_transform = get_val_transform()
         val_imageDataset = torchio.ImagesDataset(self.validation_subjects, transform=val_transform)
         val_loader = DataLoader(val_imageDataset,
-                                batch_size=self.hparams.batch_size * 2,  # always one because using different img size
+                                batch_size=self.hparams.batch_size * 2,
                                 # num_workers=multiprocessing.cpu_count())
                                 num_workers=8)
         print('Validation set:', len(val_imageDataset), 'subjects')
         return val_loader
 
-    # def test_dataloader(self) -> Union[DataLoader, List[DataLoader]]:
-    #     pass
+    def test_dataloader(self):
+        test_transform = get_test_transform()
+        # using all the data to test
+        test_imageDataset = torchio.ImagesDataset(self.subjects, transform=test_transform)
+        test_loader = DataLoader(test_imageDataset,
+                                 batch_size=1,  # always one because using different label size
+                                 num_workers=8)
+        print('Testing set:', len(test_imageDataset), 'subjects')
+        return test_loader
 
+    # need to adding more things
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=1e-3)  # ??
         return optimizer
@@ -96,8 +104,8 @@ class Lightning_Unet(pl.LightningModule):
         if batch_idx != 0 and batch_idx == 25:  # every epoch only save one fig
             input = inputs.chunk(inputs.size()[0], 0)[0]  # split into 1 in the dimension 0
             target = targets.chunk(targets.size()[0], 0)[0]  # split into 1 in the dimension 0
-            prob = probs.chunk(probs.size()[0], 0)[0]  # split into 1 in the dimension 0
-            log_all_info(self, input, target, prob, batch_idx)
+            logit = probs.chunk(logits.size()[0], 0)[0]  # split into 1 in the dimension 0
+            log_all_info(self, input, target, logit, batch_idx, "training")
         # loss = F.binary_cross_entropy_with_logits(logits, targets)
         loss = dice_loss(probs, targets)
         tensorboard_logs = {"train_loss": loss, "train_IoU": iou, "train_dice": dice}
@@ -105,7 +113,7 @@ class Lightning_Unet(pl.LightningModule):
 
     def validation_step(self, batch, batch_id):
         inputs, targets = self._prepare_data(batch)
-        print(f"input shape: {inputs.shape}, targets shape: {targets.shape}")
+        # print(f"input shape: {inputs.shape}, targets shape: {targets.shape}")
         # print(f"validation input range: {torch.min(inputs)} - {torch.max(inputs)}")
         logits = self(inputs)
         probs = torch.sigmoid(logits)  # compare the position
@@ -131,6 +139,45 @@ class Lightning_Unet(pl.LightningModule):
             "val_specificity": outputs[0]['val_step_specificity']
         }
         return {"val_loss": avg_loss, "val_dice": avg_val_dice, 'log': tensorboard_logs}
+
+    def test_step(self, batch, batch_idx):
+        inputs, targets = self._prepare_data(batch)
+        # print(f"training input range: {torch.min(inputs)} - {torch.max(inputs)}")
+        logits = self(inputs)
+        logits = F.interpolate(logits, size=logits.size()[2:])
+        probs = torch.sigmoid(logits)
+        dice, iou, _, _ = get_score(probs, targets)
+        if batch_idx != 0 and batch_idx % 501 == 0:  # save total about 10 picture
+            input = inputs.chunk(inputs.size()[0], 0)[0]  # split into 1 in the dimension 0
+            target = targets.chunk(targets.size()[0], 0)[0]  # split into 1 in the dimension 0
+            logit = probs.chunk(logits.size()[0], 0)[0]  # split into 1 in the dimension 0
+            log_all_info(self, input, target, logit, batch_idx, "testing")
+        # loss = F.binary_cross_entropy_with_logits(logits, targets)
+        loss = dice_loss(probs, targets)
+        dice, iou, sensitivity, specificity = get_score(probs, targets)
+        return {'test_step_loss': loss,
+                'test_step_dice': dice,
+                'test_step_IoU': iou,
+                'test_step_sensitivity': sensitivity,
+                'test_step_specificity': specificity
+                }
+
+    def test_epoch_end(self, outputs):
+        # torch.stack: Concatenates sequence of tensors along a new dimension.
+        avg_loss = torch.stack([x['test_step_loss'] for x in outputs]).mean()
+        avg_dice = torch.stack([x['test_step_dice'] for x in outputs]).mean()
+        avg_IoU = torch.stack([x['test_step_IoU'] for x in outputs]).mean()
+        avg_sensitivity = torch.stack([x['test_step_sensitivity'] for x in outputs]).mean()
+        avg_specificity = torch.stack([x['test_step_specificity'] for x in outputs]).mean()
+        tqdm_dict = {'test_dice': avg_dice.item()}
+        tensorboard_logs = {
+            "avg_test_loss": avg_loss,  # the outputs is a dict wrapped in a list
+            "avg_test_dice": avg_dice,
+            "avg_test_IoU": avg_IoU,
+            "avg_test_sensitivity": avg_sensitivity,
+            "avg_test_specificity": avg_specificity,
+        }
+        return {'progress_bar': tqdm_dict, 'log': tensorboard_logs}
 
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser) -> ArgumentParser:
