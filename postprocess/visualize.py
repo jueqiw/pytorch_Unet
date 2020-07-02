@@ -162,10 +162,10 @@ class BrainSlices:
             plt.close()
             return
 
-    def log(self, batch_idx: int) -> None:
+    def log(self, batch_idx: int, title: str) -> None:
         logger = self.lightning.logger
         fig, axes = self.plot()
-        summary = f"Epoch {self.lightning.current_epoch + 1} - Batch {batch_idx}"
+        summary = f"{title}: Epoch {self.lightning.current_epoch + 1} - Batch {batch_idx}"
         logger.experiment.add_figure(summary, fig, close=True)
 
         # if you want to manually intervene, look at the code at
@@ -186,7 +186,7 @@ https://pytorch.org/docs/stable/tensorboard.html
 """
 
 
-def log_all_info(module: LightningModule, img: Tensor, target: Tensor, logist: Tensor, batch_idx: int) -> None:
+def log_all_info(module: LightningModule, img: Tensor, target: Tensor, logist: Tensor, batch_idx: int, title: str) -> None:
     """Helper for decluttering training loop. Just performs all logging functions."""
-    BrainSlices(module, img, target, logist).log(batch_idx)
+    BrainSlices(module, img, target, logist).log(batch_idx, title)
     log_weights(module)

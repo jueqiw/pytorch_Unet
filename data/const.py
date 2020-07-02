@@ -3,12 +3,14 @@ import os
 import sys
 import re
 
-TMP = os.environ.get("SLURM_TMPDIR")
+TMP = os.environ.get("SLURM_TMPDIR")  # run in compute canada, also in a job
+ACT = os.environ.get("SLURM_ACCOUNT")  # run in compute canada, but not in a job
 
 COMPUTECANADA = False
 
-if TMP:  # running inside Compute Canada
+if TMP or ACT:  # running inside Compute Canada
     COMPUTECANADA = True
+
 
 if COMPUTECANADA:
     SIZE = 128
@@ -28,11 +30,9 @@ else:
 #
 # ADNI_LABEL = "brain_extraction"
 
-
-data_dir = os.environ.get("SLURM_TMPDIR")
-
 if COMPUTECANADA:
-    DATA_ROOT = Path(str(data_dir)).resolve() / "work"
+    DATA_ROOT = Path(str(TMP)).resolve() / "work"
+    # DATA_ROOT = Path("/project/6005889/U-Net_MRI-Data")
     CROPPED_IMG = DATA_ROOT / "img"
     CROPPED_LABEL = DATA_ROOT / "label"
 else:
@@ -40,13 +40,10 @@ else:
     CROPPED_IMG = DATA_ROOT / "cropped/img"
     CROPPED_LABEL = DATA_ROOT / "cropped/label"
 
-print(DATA_ROOT)
-
-
-CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359//Original"
-CC359_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//STAPLE"
-CC359_MANUAL_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359//Skull-stripping-masks//Manual"
-NFBS_DATASET_DIR = DATA_ROOT / "NFBS//NFBS_Dataset"
+CC359_DATASET_DIR = DATA_ROOT / "CalgaryCampinas359/Original"
+CC359_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359/Skull-stripping-masks/STAPLE"
+CC359_MANUAL_LABEL_DIR = DATA_ROOT / "CalgaryCampinas359/Skull-stripping-masks/Manual"
+NFBS_DATASET_DIR = DATA_ROOT / "NFBS/NFBS_Dataset"
 
 ADNI_DATASET_DIR_1 = DATA_ROOT / "ADNI"
 ADNI_DATASET_DIR_2 = DATA_ROOT / "ADNI/ADNI"
@@ -54,4 +51,4 @@ ADNI_DATASET_DIR_2 = DATA_ROOT / "ADNI/ADNI"
 if COMPUTECANADA:
     ADNI_LABEL = ADNI_DATASET_DIR_1 / "brain_extraction"
 else:
-    ADNI_LABEL = DATA_ROOT / "pincram_bin_brain_masks_5074//pincram_bin_brain_masks_5074"
+    ADNI_LABEL = DATA_ROOT / "pincram_bin_brain_masks_5074/pincram_bin_brain_masks_5074"

@@ -59,7 +59,7 @@ def main(hparams):
         checkpoint_callback=checkpoint_callback,
         early_stop_callback=early_stop_callback,
         # runs 1 train, val, test  batch and program ends
-        fast_dev_run=True,
+        fast_dev_run=False,
         default_root_dir=default_root_dir,
         logger=tb_logger,
         max_epochs=10000,

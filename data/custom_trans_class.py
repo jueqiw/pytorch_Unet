@@ -10,7 +10,6 @@ from .const import SIZE
 
 class ToSqueeze(Transform):
     """Squeese the ADNI label image, if not it will have this error:
-
     sitk::ERROR: Pixel type: vector of 32-bit float is not supported in 3D byclass itk::simple::ResampleImageFilter
     """
     def apply_transform(self, sample: Subject) -> dict:

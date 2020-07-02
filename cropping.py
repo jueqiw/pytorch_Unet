@@ -160,15 +160,14 @@ def run_crop(img_path, label_path, img_folder, label_folder):
     print(f"{ctime()}: Successfully save file {filename} file!")
 
 
-def _run_crop(args):
-    run_crop(*args)
-
-
 if __name__ == "__main__":
     if COMPUTECANADA:
-        DATA_ROOT = Path(str(os.environ.get("SLURM_TMPDIR"))).resolve()
-        cropped_img_folder = DATA_ROOT / "work" / "img"
-        cropped_label_folder = DATA_ROOT / "work" / "label"
+        # DATA_ROOT = Path(str(os.environ.get("SLURM_TMPDIR"))).resolve()
+        # DATA_ROOT = Path("/project/6005889/U-Net_MRI-Data")
+        # cropped_img_folder = DATA_ROOT / "work" / "img"
+        # cropped_label_folder = DATA_ROOT / "work" / "label"
+        cropped_img_folder = DATA_ROOT / "img"
+        cropped_label_folder = DATA_ROOT / "label"
     else:
         DATA_ROOT = Path(__file__).resolve().parent.parent / "Data"
         img_path = DATA_ROOT / "all_different_size_img/img"
@@ -176,19 +175,17 @@ if __name__ == "__main__":
         cropped_img_folder = DATA_ROOT / "cropped" / "img"
         cropped_label_folder = DATA_ROOT / "cropped" / "label"
 
-    if not os.path.exists(DATA_ROOT / "cropped"):
-        os.mkdir(DATA_ROOT / "cropped")
     if not os.path.exists(cropped_img_folder):
         os.mkdir(cropped_img_folder)
     if not os.path.exists(cropped_label_folder):
         os.mkdir(cropped_label_folder)
 
-    img_path_list = sorted([
-        Path(f) for f in sorted(glob(f"{str(img_path)}/**/*.nii*", recursive=True))
-    ])
-    label_path_list = sorted([
-        Path(f) for f in sorted(glob(f"{str(label_path)}/**/*.nii.gz", recursive=True))
-    ])
+    # img_path_list = sorted([
+    #     Path(f) for f in sorted(glob(f"{str(img_path)}/**/*.nii*", recursive=True))
+    # ])
+    # label_path_list = sorted([
+    #     Path(f) for f in sorted(glob(f"{str(label_path)}/**/*.nii.gz", recursive=True))
+    # ])
 
     print(f"{ctime()}: starting ...")
     # pool.map(_run_crop, arg_list[:16])
@@ -203,12 +200,14 @@ if __name__ == "__main__":
         # run_crop(idx, mri.img_path, mri.label_path, cropped_img_folder, cropped_label_folder)
 
     idx = 0
-    for img_path, label_path in zip(img_path_list, label_path_list):
-        idx += 1
-        run_crop(img_path, label_path, cropped_img_folder, cropped_label_folder)
+    # for img_path, label_path in zip(img_path_list, label_path_list):
+    #     idx += 1
+    #     run_crop(img_path, label_path, cropped_img_folder, cropped_label_folder)
 
     for mri in get_path(datasets):
+        idx += 1
         run_crop(mri.img_path, mri.label_path, cropped_img_folder, cropped_label_folder)
 
     print(f"{ctime()}: ending ...")
+    print(f"Totally get {idx} imgs!")
     # show_save_img_and_label(img_2D, label_2D, bbox_percentile_80, bbox_kmeans, "./rectangle_image", idx)
