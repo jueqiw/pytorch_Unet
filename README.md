@@ -9,8 +9,10 @@
 - [X] rewrite part do not use temp disk
 - [X] try other server
 - [X] install model
+- [X] test crop or not crop's dice
 - [ ] rebuild the data.tar file
-- [ ] test crop or not crop's dice
+- [ ] modify learning rate
+- [ ] read about nnUnet learning rate
 - [ ] try the Instance Normal instead of GN
 - [ ] change the kernal size
 - [ ] try dilated convolution

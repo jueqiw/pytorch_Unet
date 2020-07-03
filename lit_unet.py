@@ -2,6 +2,7 @@ from typing import Union, List
 import pytorch_lightning as pl
 from torchio import DATA
 from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
 from data.get_subjects import get_subjects
 from data.const import CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1, COMPUTECANADA
 from data.transform import get_train_transforms, get_val_transform, get_test_transform
@@ -9,6 +10,8 @@ from argparse import ArgumentParser
 from data.const import SIZE
 from model.unet.unet import UNet
 from utils.loss import get_score, dice_loss
+from utils.optimizer import fetch_optimizer
+from torch.optim.lr_scheduler import MultiStepLR
 import torch.nn.functional as F
 from postprocess.visualize import log_all_info
 from torch import Tensor
@@ -30,15 +33,12 @@ class Lightning_Unet(pl.LightningModule):
             padding=2,
             dropout=0,
         )
-        if COMPUTECANADA:
-            datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
-        else:
-            datasets = [CC359_DATASET_DIR]
         self.subjects = get_subjects()
         num_subjects = len(self.subjects)
         num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
         self.training_subjects = self.subjects[:num_training_subjects]
         self.validation_subjects = self.subjects[num_training_subjects:]
+        self.lr = self.hparams.learning_rate
         # self.training_subjects = subjects[:10]
         # self.validation_subjects = subjects[10:15]
 
@@ -62,7 +62,7 @@ class Lightning_Unet(pl.LightningModule):
         val_loader = DataLoader(val_imageDataset,
                                 batch_size=self.hparams.batch_size * 2,
                                 # num_workers=multiprocessing.cpu_count())
-                                num_workers=8)
+                                num_workers=4)
         print('Validation set:', len(val_imageDataset), 'subjects')
         return val_loader
 
@@ -72,14 +72,21 @@ class Lightning_Unet(pl.LightningModule):
         test_imageDataset = torchio.ImagesDataset(self.subjects, transform=test_transform)
         test_loader = DataLoader(test_imageDataset,
                                  batch_size=1,  # always one because using different label size
-                                 num_workers=8)
+                                 num_workers=4)
         print('Testing set:', len(test_imageDataset), 'subjects')
         return test_loader
 
     # need to adding more things
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-3)  # ??
+        # Setting up the optimizer
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
+        # scheduler = MultiStepLR(optimizer, milestones=[3, 10], gamma=0.1)
+        # return [optimizer], [scheduler]
         return optimizer
+
+    # from https://github.com/MIC-DKFZ/nnUNet/blob/master/nnunet/training/learning_rate/poly_lr.py#L16
+    def poly_lr(epoch, max_epochs, initial_lr, exponent=0.9):
+        return initial_lr * (1 - epoch / max_epochs) ** exponent
 
     def _prepare_data(self, batch):
         inputs, targets = batch["img"][DATA], batch["label"][DATA]
@@ -138,7 +145,7 @@ class Lightning_Unet(pl.LightningModule):
             "val_sensitivity": outputs[0]['val_step_sensitivity'],
             "val_specificity": outputs[0]['val_step_specificity']
         }
-        return {"val_loss": avg_loss, "val_dice": avg_val_dice, 'log': tensorboard_logs}
+        return {"loss": avg_loss, "val_dice": avg_val_dice, 'log': tensorboard_logs}
 
     def test_step(self, batch, batch_idx):
         inputs, targets = self._prepare_data(batch)
@@ -147,7 +154,7 @@ class Lightning_Unet(pl.LightningModule):
         logits = F.interpolate(logits, size=logits.size()[2:])
         probs = torch.sigmoid(logits)
         dice, iou, _, _ = get_score(probs, targets)
-        if batch_idx != 0 and batch_idx % 501 == 0:  # save total about 10 picture
+        if batch_idx != 0 and batch_idx % 50 == 0:  # save total about 10 picture
             input = inputs.chunk(inputs.size()[0], 0)[0]  # split into 1 in the dimension 0
             target = targets.chunk(targets.size()[0], 0)[0]  # split into 1 in the dimension 0
             logit = probs.chunk(logits.size()[0], 0)[0]  # split into 1 in the dimension 0
@@ -169,15 +176,14 @@ class Lightning_Unet(pl.LightningModule):
         avg_IoU = torch.stack([x['test_step_IoU'] for x in outputs]).mean()
         avg_sensitivity = torch.stack([x['test_step_sensitivity'] for x in outputs]).mean()
         avg_specificity = torch.stack([x['test_step_specificity'] for x in outputs]).mean()
-        tqdm_dict = {'test_dice': avg_dice.item()}
         tensorboard_logs = {
-            "avg_test_loss": avg_loss,  # the outputs is a dict wrapped in a list
-            "avg_test_dice": avg_dice,
-            "avg_test_IoU": avg_IoU,
-            "avg_test_sensitivity": avg_sensitivity,
-            "avg_test_specificity": avg_specificity,
+            "avg_test_loss": avg_loss.item(),  # the outputs is a dict wrapped in a list
+            "avg_test_dice": avg_dice.item(),
+            "avg_test_IoU": avg_IoU.item(),
+            "avg_test_sensitivity": avg_sensitivity.item(),
+            "avg_test_specificity": avg_specificity.item(),
         }
-        return {'progress_bar': tqdm_dict, 'log': tensorboard_logs}
+        return {'log': tensorboard_logs}
 
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser) -> ArgumentParser:
@@ -186,7 +192,7 @@ class Lightning_Unet(pl.LightningModule):
         """
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
         parser.add_argument("--batch_size", type=int, default=2, help='Batch size', dest='batch_size')
-        parser.add_argument("--learning_rate", type=float, default=1e-3, help='Learning rate')
+        parser.add_argument("--learning_rate", type=float, default=0.2, help='Learning rate')
         parser.add_argument("--normalization", type=str, default='Group', help='the way of normalization')
         parser.add_argument("--down_sample", type=str, default="max", help="the way to down sample")
         parser.add_argument("--loss", type=str, default="BCEWL", help='Loss Function')

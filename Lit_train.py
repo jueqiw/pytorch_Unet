@@ -4,6 +4,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from argparse import ArgumentParser
 from lit_unet import Lightning_Unet
 from data.const import COMPUTECANADA
+import pickle
 import pathlib
 import os
 import torch
@@ -18,7 +19,7 @@ def main(hparams):
 
     if COMPUTECANADA:
         default_root_dir = "/home/jueqi/projects/def-jlevman/U-Net_MRI-Data/log"
-        checkpoint_file = "{pathlib.Path(__file__).resolve().parent}/log/checkpoint/{epoch}-{val_dice:.2f}"
+        checkpoint_file = "./checkpoint/{epoch}-{val_dice:.2f}"
     else:
         default_root_dir = "./log/checkpoint"
         checkpoint_file = "./log/checkpoint/{epoch}-{val_dice:.2f}"
@@ -50,7 +51,7 @@ def main(hparams):
     trainer = Trainer(
         gpus=hparams.gpus,
         # amp_level='O2', precision=16,
-        # num_nodes=8, distributed_backend='ddp',
+        # num_nodes=4, distributed_backend='ddp',
         check_val_every_n_epoch=1,
         # log every k batches instead
         row_log_interval=10,
@@ -64,8 +65,23 @@ def main(hparams):
         logger=tb_logger,
         max_epochs=10000,
         # resume_from_checkpoint='./log/checkpoint',
-        profiler=True
+        profiler=True,
+        auto_lr_find=True,
     )
+
+    # Run learning rate finder
+    # trainer = Trainer()
+    # lr_finder = trainer.lr_find(model)
+    #
+    # # Plot with
+    # fig = lr_finder.plot(suggest=True)
+    # fig.show()
+    #
+    # # Pick point based on plot, or get suggestion
+    # new_lr = lr_finder.suggestion()
+    # print(new_lr)
+    if COMPUTECANADA:
+        pickle.dumps(model)
 
     trainer.fit(model)
 
