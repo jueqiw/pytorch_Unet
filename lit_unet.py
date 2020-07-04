@@ -17,6 +17,7 @@ from postprocess.visualize import log_all_info
 from torch import Tensor
 import torchio
 import torch
+import random
 
 
 class Lightning_Unet(pl.LightningModule):
@@ -39,6 +40,13 @@ class Lightning_Unet(pl.LightningModule):
         self.training_subjects = self.subjects[:num_training_subjects]
         self.validation_subjects = self.subjects[num_training_subjects:]
         self.lr = self.hparams.learning_rate
+        self.max_loss_img = {
+            "loss": 0,
+            "img": None,
+            "label": None,
+            "prob": None,
+            "batch_idx": None,
+        }
         # self.training_subjects = subjects[:10]
         # self.validation_subjects = subjects[10:15]
 
@@ -49,10 +57,11 @@ class Lightning_Unet(pl.LightningModule):
         training_transform = get_train_transforms()
         train_imageDataset = torchio.ImagesDataset(self.training_subjects, transform=training_transform)
         training_loader = DataLoader(train_imageDataset,
-                                     batch_size=self.hparams.batch_size,
+                                     # batch_size=self.hparams.batch_size,
+                                     batch_size=1,
                                      # num_workers=multiprocessing.cpu_count()) would cause RuntimeError('DataLoader
                                      # worker (pid(s) {}) exited unexpectedly' if don't do that
-                                     num_workers=8)
+                                     num_workers=4)
         print('Training set:', len(train_imageDataset), 'subjects')
         return training_loader
 
@@ -79,8 +88,8 @@ class Lightning_Unet(pl.LightningModule):
     # need to adding more things
     def configure_optimizers(self):
         # Setting up the optimizer
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
-        # scheduler = MultiStepLR(optimizer, milestones=[3, 10], gamma=0.1)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.learning_rate)
+        # scheduler = MultiStepLR(optimizer, milestones=[1, 10], gamma=0.1)
         # return [optimizer], [scheduler]
         return optimizer
 
@@ -108,15 +117,33 @@ class Lightning_Unet(pl.LightningModule):
         logits = self(inputs)
         probs = torch.sigmoid(logits)
         dice, iou, _, _ = get_score(probs, targets)
-        if batch_idx != 0 and batch_idx == 25:  # every epoch only save one fig
-            input = inputs.chunk(inputs.size()[0], 0)[0]  # split into 1 in the dimension 0
-            target = targets.chunk(targets.size()[0], 0)[0]  # split into 1 in the dimension 0
-            logit = probs.chunk(logits.size()[0], 0)[0]  # split into 1 in the dimension 0
-            log_all_info(self, input, target, logit, batch_idx, "training")
-        # loss = F.binary_cross_entropy_with_logits(logits, targets)
         loss = dice_loss(probs, targets)
+        if self.max_loss_img["loss"] < loss.item():
+            self.max_loss_img["loss"] = loss.item()
+            self.max_loss_img["img"] = inputs
+            self.max_loss_img["label"] = targets
+            self.max_loss_img["prob"] = probs
+            self.max_loss_img["batch_idx"] = batch_idx
         tensorboard_logs = {"train_loss": loss, "train_IoU": iou, "train_dice": dice}
         return {'loss': loss, "log": tensorboard_logs}
+
+    def training_epoch_end(self, outputs):
+        log_all_info(self, self.max_loss_img["img"], self.max_loss_img["label"], self.max_loss_img["prob"], self.max_loss_img["batch_idx"], "training")
+        # loss = F.binary_cross_entropy_with_logits(logits, targets)
+        avg_loss = torch.stack([x['train_loss'] for x in outputs]).mean()
+        # tensorboard_logs = {
+        #     "train_loss": outputs[0]['train_step_loss'],  # the outputs is a dict wrapped in a list
+        #     "train_dice": outputs[0]['train_step_dice'],
+        #     "train_IoU": outputs[0]['train_step_IoU'],
+        # }
+        self.max_loss_img = {
+            "loss": 0,
+            "img": None,
+            "label": None,
+            "prob": None,
+            "batch_idx": None,
+        }
+        return {"avg_loss": avg_loss}
 
     def validation_step(self, batch, batch_id):
         inputs, targets = self._prepare_data(batch)
@@ -124,6 +151,7 @@ class Lightning_Unet(pl.LightningModule):
         # print(f"validation input range: {torch.min(inputs)} - {torch.max(inputs)}")
         logits = self(inputs)
         probs = torch.sigmoid(logits)  # compare the position
+        # loss = F.binary_cross_entropy_with_logits(logits, targets)
         loss = dice_loss(probs, targets)
         dice, iou, sensitivity, specificity = get_score(probs, targets)
         return {'val_step_loss': loss,
@@ -154,13 +182,13 @@ class Lightning_Unet(pl.LightningModule):
         logits = F.interpolate(logits, size=logits.size()[2:])
         probs = torch.sigmoid(logits)
         dice, iou, _, _ = get_score(probs, targets)
-        if batch_idx != 0 and batch_idx % 50 == 0:  # save total about 10 picture
-            input = inputs.chunk(inputs.size()[0], 0)[0]  # split into 1 in the dimension 0
-            target = targets.chunk(targets.size()[0], 0)[0]  # split into 1 in the dimension 0
-            logit = probs.chunk(logits.size()[0], 0)[0]  # split into 1 in the dimension 0
-            log_all_info(self, input, target, logit, batch_idx, "testing")
-        # loss = F.binary_cross_entropy_with_logits(logits, targets)
         loss = dice_loss(probs, targets)
+        # if batch_idx != 0 and batch_idx % 50 == 0:  # save total about 10 picture
+        #     input = inputs.chunk(inputs.size()[0], 0)[0]  # split into 1 in the dimension 0
+        #     target = targets.chunk(targets.size()[0], 0)[0]  # split into 1 in the dimension 0
+        #     logit = probs.chunk(logits.size()[0], 0)[0]  # split into 1 in the dimension 0
+        #     log_all_info(self, input, target, logit, batch_idx, "testing")
+        # loss = F.binary_cross_entropy_with_logits(logits, targets)
         dice, iou, sensitivity, specificity = get_score(probs, targets)
         return {'test_step_loss': loss,
                 'test_step_dice': dice,
@@ -176,12 +204,20 @@ class Lightning_Unet(pl.LightningModule):
         avg_IoU = torch.stack([x['test_step_IoU'] for x in outputs]).mean()
         avg_sensitivity = torch.stack([x['test_step_sensitivity'] for x in outputs]).mean()
         avg_specificity = torch.stack([x['test_step_specificity'] for x in outputs]).mean()
+        print(
+            "test result:",
+            f"avg loss: {avg_loss}",
+            f"avg dice: {avg_dice}",
+            f"avg IoU: {avg_IoU}"
+            f"avg sensitivity: {avg_sensitivity}",
+            f"avg specificity: {avg_specificity}", sep='\n'
+        )
         tensorboard_logs = {
-            "avg_test_loss": avg_loss.item(),  # the outputs is a dict wrapped in a list
-            "avg_test_dice": avg_dice.item(),
-            "avg_test_IoU": avg_IoU.item(),
-            "avg_test_sensitivity": avg_sensitivity.item(),
-            "avg_test_specificity": avg_specificity.item(),
+            "test_loss": outputs[0]['test_step_loss'],  # the outputs is a dict wrapped in a list
+            "test_dice": outputs[0]['test_step_dice'],
+            "test_IoU": outputs[0]['test_step_IoU'],
+            "test_sensitivity": outputs[0]['test_step_sensitivity'],
+            "test_specificity": outputs[0]['test_step_specificity']
         }
         return {'log': tensorboard_logs}
 
@@ -192,7 +228,7 @@ class Lightning_Unet(pl.LightningModule):
         """
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
         parser.add_argument("--batch_size", type=int, default=2, help='Batch size', dest='batch_size')
-        parser.add_argument("--learning_rate", type=float, default=0.2, help='Learning rate')
+        parser.add_argument("--learning_rate", type=float, default=1e-3, help='Learning rate')
         parser.add_argument("--normalization", type=str, default='Group', help='the way of normalization')
         parser.add_argument("--down_sample", type=str, default="max", help="the way to down sample")
         parser.add_argument("--loss", type=str, default="BCEWL", help='Loss Function')

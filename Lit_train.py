@@ -14,7 +14,6 @@ def main(hparams):
     """
     Trains the Lightning model as specified in `hparams`
     """
-
     model = Lightning_Unet(hparams)
 
     if COMPUTECANADA:
@@ -34,7 +33,6 @@ def main(hparams):
         mode='max',
         prefix=''
     )
-
     early_stop_callback = EarlyStopping(
         monitor='val_loss',
         min_delta=0.00,
@@ -51,7 +49,7 @@ def main(hparams):
     trainer = Trainer(
         gpus=hparams.gpus,
         # amp_level='O2', precision=16,
-        # num_nodes=4, distributed_backend='ddp',
+        # num_nodes=2, distributed_backend='ddp',
         check_val_every_n_epoch=1,
         # log every k batches instead
         row_log_interval=10,
@@ -66,7 +64,7 @@ def main(hparams):
         max_epochs=10000,
         # resume_from_checkpoint='./log/checkpoint',
         profiler=True,
-        auto_lr_find=True,
+        # auto_lr_find=True
     )
 
     # Run learning rate finder
@@ -79,7 +77,9 @@ def main(hparams):
     #
     # # Pick point based on plot, or get suggestion
     # new_lr = lr_finder.suggestion()
-    # print(new_lr)
+    # print(f"recommend learning_rate: {new_lr}")
+    # model.hparams.learning_rate = new_lr
+
     if COMPUTECANADA:
         pickle.dumps(model)
 
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     parser.add_argument("--gpus", type=int, default=1, help='which gpus')
     parser.add_argument("--TensorBoardLogger", dest='TensorBoardLogger', default='/home/jq/Desktop/log',
                         help='TensorBoardLogger dir')
-    parser.add_argument("--name", dest='name', default="making train and val image in the same range, using dice loss")
+    parser.add_argument("--name", dest='name', default="using cropped data, using dice")
     parser = Lightning_Unet.add_model_specific_args(parser)
     hparams = parser.parse_args()
 
