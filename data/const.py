@@ -31,8 +31,8 @@ else:
 # ADNI_LABEL = "brain_extraction"
 
 if COMPUTECANADA:
-    DATA_ROOT = Path(str(TMP)).resolve() / "work"
-    # DATA_ROOT = Path("/project/6005889/U-Net_MRI-Data")
+    # DATA_ROOT = Path(str(TMP)).resolve() / "work"
+    DATA_ROOT = Path("/project/6005889/U-Net_MRI-Data")
     CROPPED_IMG = DATA_ROOT / "img"
     CROPPED_LABEL = DATA_ROOT / "label"
 else:

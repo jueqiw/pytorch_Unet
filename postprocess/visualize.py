@@ -121,20 +121,22 @@ class BrainSlices:
         # BDEWithLogitsLoss handles the sigmoid + loss internally to avoid
         # imprecision issues, but then this means the output of our network
         # never *actually* passes through a sigmoid. So we do that here.
-        pred = t.sigmoid(t.tensor(pred)).numpy()
+        # pred = t.sigmoid(t.tensor(pred)).numpy()
 
         # Consistently apply colormap since images are standardized but still
         # vary considerably in maximum and minimum values
-        true_args = dict(vmin=-3.0, vmax=8.0, cmap="gray")
+        imin = min(true)
+        imax = max(true)
+        scaled = np.array(((true - imin) / (imax - imin)) * 255, dtype=int)
         mask_args = dict(vmin=0.0, vmax=1.0, cmap="gray", alpha=0.5)
 
-        axes[0].imshow(true, **true_args)
+        axes[0].imshow(scaled)
         axes[0].imshow(target, **mask_args)
         axes[0].set_title("Actual Brain Tissue (probability)")
         axes[0].set_xticks([])
         axes[0].set_yticks([])
 
-        axes[1].imshow(true, **true_args)
+        axes[1].imshow(scaled)
         axes[1].imshow(pred, **mask_args)
         axes[1].set_title("Predicted Brain Tissue (probability)")
         axes[1].set_xticks([])
