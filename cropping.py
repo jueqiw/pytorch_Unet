@@ -18,6 +18,7 @@ https://github.com/DM-Berger/autocrop/blob/dec40a194f3ace2d024fd24d8faa503945821
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 import os
+import re
 import numpy as np
 import shutil
 from multiprocessing import Pool
@@ -36,6 +37,7 @@ from data.get_path import get_path
 # from get_path import get_path
 from functools import reduce
 import copy
+
 
 
 # have similar outcome to the kmeans, but kmeans have dramtically better result on some images
@@ -63,9 +65,10 @@ def create_nonzero_mask_kmeans(data):
     # The larger the the size of the batch, the more computationally costly the training process.
     # Increasing the batch size may also help avoid reassignment triggering by some clusters becoming to small
     # just from sampling variation.
-    km = MiniBatchKMeans(n_clusters=4, batch_size=1000).fit(flat.reshape(-1, 1))
+    # using 5!!!
+    km = MiniBatchKMeans(n_clusters=5, batch_size=1000).fit(flat.reshape(-1, 1))
     # km = KMeans(n_clusters=4, n_jobs=1).fit(flat.reshape(-1, 1))  # more slowly
-    gs = [km.labels_ == i for i in range(4)]
+    gs = [km.labels_ == i for i in range(5)]
     maxs = sorted([np.max(flat[g]) for g in gs])  # choose the max value in the min group
     thresh = maxs[0]
 
@@ -143,7 +146,7 @@ def get_2D_image(img):
 def run_crop(img_path, label_path, img_folder, label_folder):
     # get the file name
     _, filename = os.path.split(img_path)
-    filename, _ = os.path.splitext(filename)
+    name = re.search('(.*?).nii|(.*?).nii.gz', filename).group(1)
 
     print(f"{ctime()}: Start processing {filename} ...")
     try:
@@ -154,10 +157,10 @@ def run_crop(img_path, label_path, img_folder, label_folder):
 
     cropped_img, cropped_label = crop_to_nonzero(img, label)
     cropped_img_file = nib.Nifti1Image(cropped_img, img_affine)
-    nib.save(cropped_img_file, img_folder / Path(f"{filename}.nii.gz"))
+    nib.save(cropped_img_file, img_folder / Path(f"{name}.nii.gz"))
     cropped_label_file = nib.Nifti1Image(cropped_label, label_affine)
-    nib.save(cropped_label_file, label_folder / Path(f"{filename}.nii.gz"))
-    print(f"{ctime()}: Successfully save file {filename} file!")
+    nib.save(cropped_label_file, label_folder / Path(f"{name}.nii.gz"))
+    print(f"{ctime()}: Successfully save file {name} file!")
 
 
 if __name__ == "__main__":

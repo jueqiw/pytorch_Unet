@@ -125,24 +125,25 @@ class BrainSlices:
 
         # Consistently apply colormap since images are standardized but still
         # vary considerably in maximum and minimum values
-        imin = min(true)
-        imax = max(true)
+        imin = np.min(true)
+        imax = np.max(true)
         scaled = np.array(((true - imin) / (imax - imin)) * 255, dtype=int)
+        true_args = dict(vmin=0, vmax=255, cmap="gray", alpha=0.5)
         mask_args = dict(vmin=0.0, vmax=1.0, cmap="gray", alpha=0.5)
 
-        axes[0].imshow(scaled)
+        axes[0].imshow(scaled, **true_args)
         axes[0].imshow(target, **mask_args)
         axes[0].set_title("Actual Brain Tissue (probability)")
         axes[0].set_xticks([])
         axes[0].set_yticks([])
 
-        axes[1].imshow(scaled)
+        axes[1].imshow(scaled, **true_args)
         axes[1].imshow(pred, **mask_args)
         axes[1].set_title("Predicted Brain Tissue (probability)")
         axes[1].set_xticks([])
         axes[1].set_yticks([])
 
-        axes[2].imshow(true * np.array(pred > 0.5, dtype=float), **true_args)
+        axes[2].imshow(scaled * np.array(pred > 0.9, dtype=float), **true_args)
         axes[2].set_title("Predicted Brain Tissue (binary)")
         axes[2].set_xticks([])
         axes[2].set_yticks([])

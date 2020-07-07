@@ -10,7 +10,8 @@
 - [X] try other server
 - [X] install model
 - [X] test crop or not crop's dice
-- [ ] rebuild the data.tar file
+- [X] rebuild the data.tar file
+- [ ] change the file name from .nii.nii.gz to nii.gz
 - [ ] modify learning rate
 - [ ] read about nnUnet learning rate
 - [ ] try the Instance Normal instead of GN

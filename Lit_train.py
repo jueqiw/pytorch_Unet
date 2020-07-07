@@ -14,7 +14,6 @@ def main(hparams):
     """
     Trains the Lightning model as specified in `hparams`
     """
-    model = Lightning_Unet(hparams)
 
     if COMPUTECANADA:
         default_root_dir = "/home/jueqi/projects/def-jlevman/U-Net_MRI-Data/log"
@@ -33,6 +32,7 @@ def main(hparams):
         mode='max',
         prefix=''
     )
+
     early_stop_callback = EarlyStopping(
         monitor='val_loss',
         min_delta=0.00,
@@ -47,9 +47,9 @@ def main(hparams):
     tb_logger = loggers.TensorBoardLogger(hparams.TensorBoardLogger)
 
     trainer = Trainer(
+        distributed_backend='ddp',
         gpus=hparams.gpus,
-        # amp_level='O2', precision=16,
-        # num_nodes=2, distributed_backend='ddp',
+        num_nodes=2,
         check_val_every_n_epoch=1,
         # log every k batches instead
         row_log_interval=10,
@@ -64,25 +64,10 @@ def main(hparams):
         max_epochs=10000,
         # resume_from_checkpoint='./log/checkpoint',
         profiler=True,
-        # auto_lr_find=True
+        auto_lr_find=True,
     )
 
-    # Run learning rate finder
-    # trainer = Trainer()
-    # lr_finder = trainer.lr_find(model)
-    #
-    # # Plot with
-    # fig = lr_finder.plot(suggest=True)
-    # fig.show()
-    #
-    # # Pick point based on plot, or get suggestion
-    # new_lr = lr_finder.suggestion()
-    # print(f"recommend learning_rate: {new_lr}")
-    # model.hparams.learning_rate = new_lr
-
-    if COMPUTECANADA:
-        pickle.dumps(model)
-
+    model = Lightning_Unet(hparams)
     trainer.fit(model)
 
     # (1) load the best checkpoint automatically (lightning tracks this for you)
@@ -98,7 +83,11 @@ if __name__ == "__main__":
     parser.add_argument("--gpus", type=int, default=1, help='which gpus')
     parser.add_argument("--TensorBoardLogger", dest='TensorBoardLogger', default='/home/jq/Desktop/log',
                         help='TensorBoardLogger dir')
-    parser.add_argument("--name", dest='name', default="using cropped data, using dice")
+    parser.add_argument("--name", dest='name', default="making train and val image in the same range, using dice loss")
+    parser.add_argument("--pruning", "-p", action="store_true",
+                        help="Activate the pruning feature. `MedianPruner` stops unpromising "
+                             "trials at the early stages of training.",
+    )
     parser = Lightning_Unet.add_model_specific_args(parser)
     hparams = parser.parse_args()
 
