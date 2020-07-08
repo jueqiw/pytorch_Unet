@@ -17,6 +17,7 @@ from postprocess.visualize import log_all_info
 from torch import Tensor
 import torchio
 import torch
+import random
 
 
 class Lightning_Unet(pl.LightningModule):
@@ -33,17 +34,22 @@ class Lightning_Unet(pl.LightningModule):
             padding=2,
             dropout=0,
         )
+        self.lr = self.hparams.learning_rate
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self.unet(x)
+
+    # Called at the beginning of fit and test. This is a good hook when you need to build models dynamically or
+    # adjust something about them. This hook is called on every process when using DDP.
+    def setup(self, stage):
         self.subjects = get_subjects()
+        random.seed(42)
+        random.shuffle(self.subjects)  # shuffle it to pick the val set
+        # self.subjects = self.subjects[:1500]
         num_subjects = len(self.subjects)
         num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
         self.training_subjects = self.subjects[:num_training_subjects]
         self.validation_subjects = self.subjects[num_training_subjects:]
-        self.lr = self.hparams.learning_rate
-        # self.training_subjects = subjects[:10]
-        # self.validation_subjects = subjects[10:15]
-
-    def forward(self, x: Tensor) -> Tensor:
-        return self.unet(x)
 
     def train_dataloader(self) -> DataLoader:
         training_transform = get_train_transforms()
@@ -52,7 +58,7 @@ class Lightning_Unet(pl.LightningModule):
                                      batch_size=self.hparams.batch_size,
                                      # num_workers=multiprocessing.cpu_count()) would cause RuntimeError('DataLoader
                                      # worker (pid(s) {}) exited unexpectedly' if don't do that
-                                     num_workers=8)
+                                     num_workers=4)
         print('Training set:', len(train_imageDataset), 'subjects')
         return training_loader
 
@@ -62,7 +68,7 @@ class Lightning_Unet(pl.LightningModule):
         val_loader = DataLoader(val_imageDataset,
                                 batch_size=self.hparams.batch_size * 2,
                                 # num_workers=multiprocessing.cpu_count())
-                                num_workers=4)  # accounting to the CPU cores per task
+                                num_workers=4)
         print('Validation set:', len(val_imageDataset), 'subjects')
         return val_loader
 
@@ -80,15 +86,15 @@ class Lightning_Unet(pl.LightningModule):
     def configure_optimizers(self):
         # Setting up the optimizer
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
-        # scheduler = MultiStepLR(optimizer, milestones=[3, 10], gamma=0.1)
-        # return [optimizer], [scheduler]
-        return optimizer
+        scheduler = MultiStepLR(optimizer, milestones=[1, 10], gamma=0.1)
+        return [optimizer], [scheduler]
+        # return optimizer
 
     # from https://github.com/MIC-DKFZ/nnUNet/blob/master/nnunet/training/learning_rate/poly_lr.py#L16
     def poly_lr(epoch, max_epochs, initial_lr, exponent=0.9):
         return initial_lr * (1 - epoch / max_epochs) ** exponent
 
-    def _prepare_data(self, batch):
+    def prepare_batch(self, batch):
         inputs, targets = batch["img"][DATA], batch["label"][DATA]
         if torch.isnan(inputs).any():
             print("there is nan in input data!")
@@ -103,34 +109,35 @@ class Lightning_Unet(pl.LightningModule):
         return inputs, target_bin
 
     def training_step(self, batch, batch_idx):
-        inputs, targets = self._prepare_data(batch)
+        inputs, targets = self.prepare_batch(batch)
         # print(f"training input range: {torch.min(inputs)} - {torch.max(inputs)}")
         logits = self(inputs)
         probs = torch.sigmoid(logits)
         dice, iou, _, _ = get_score(probs, targets)
-        if batch_idx != 0 and batch_idx == 25:  # every epoch only save one fig
+        if batch_idx != 0 and self.global_step > 2 and dice.item() < 0.5:  # every epoch only save one fig
             input = inputs.chunk(inputs.size()[0], 0)[0]  # split into 1 in the dimension 0
             target = targets.chunk(targets.size()[0], 0)[0]  # split into 1 in the dimension 0
             logit = probs.chunk(logits.size()[0], 0)[0]  # split into 1 in the dimension 0
             log_all_info(self, input, target, logit, batch_idx, "training")
-        # loss = F.binary_cross_entropy_with_logits(logits, targets)
-        loss = dice_loss(probs, targets)
-        tensorboard_logs = {"train_loss": loss, "train_IoU": iou, "train_dice": dice}
-        return {'loss': loss, "log": tensorboard_logs}
+        loss = F.binary_cross_entropy_with_logits(logits, targets)
+        # loss = dice_loss(probs, targets)
+        tensorboard_logs = {"train_loss": loss.item(), "train_IoU": iou.item(), "train_dice": dice.item()}
+        return {'loss': loss.item(), "log": tensorboard_logs}
 
     def validation_step(self, batch, batch_id):
-        inputs, targets = self._prepare_data(batch)
+        inputs, targets = self.prepare_batch(batch)
         # print(f"input shape: {inputs.shape}, targets shape: {targets.shape}")
         # print(f"validation input range: {torch.min(inputs)} - {torch.max(inputs)}")
         logits = self(inputs)
         probs = torch.sigmoid(logits)  # compare the position
-        loss = dice_loss(probs, targets)
+        loss = F.binary_cross_entropy_with_logits(logits, targets)
+        # loss = dice_loss(probs, targets)
         dice, iou, sensitivity, specificity = get_score(probs, targets)
-        return {'val_step_loss': loss,
-                'val_step_dice': dice,
-                'val_step_IoU': iou,
-                "val_step_sensitivity": sensitivity,
-                "val_step_specificity": specificity
+        return {'val_step_loss': loss.item(),
+                'val_step_dice': dice.item(),
+                'val_step_IoU': iou.item(),
+                "val_step_sensitivity": sensitivity.item(),
+                "val_step_specificity": specificity.item()
                 }
 
     # Called at the end of the validation epoch with the outputs of all validation steps.
@@ -145,10 +152,10 @@ class Lightning_Unet(pl.LightningModule):
             "val_sensitivity": outputs[0]['val_step_sensitivity'],
             "val_specificity": outputs[0]['val_step_specificity']
         }
-        return {"loss": avg_loss, "val_dice": avg_val_dice, 'log': tensorboard_logs}
+        return {"loss": avg_loss.item(), "val_dice": avg_val_dice.item(), 'log': tensorboard_logs}
 
     def test_step(self, batch, batch_idx):
-        inputs, targets = self._prepare_data(batch)
+        inputs, targets = self.prepare_batch(batch)
         # print(f"training input range: {torch.min(inputs)} - {torch.max(inputs)}")
         logits = self(inputs)
         logits = F.interpolate(logits, size=logits.size()[2:])
@@ -162,11 +169,11 @@ class Lightning_Unet(pl.LightningModule):
         # loss = F.binary_cross_entropy_with_logits(logits, targets)
         loss = dice_loss(probs, targets)
         dice, iou, sensitivity, specificity = get_score(probs, targets)
-        return {'test_step_loss': loss,
-                'test_step_dice': dice,
-                'test_step_IoU': iou,
-                'test_step_sensitivity': sensitivity,
-                'test_step_specificity': specificity
+        return {'test_step_loss': loss.item(),
+                'test_step_dice': dice.item(),
+                'test_step_IoU': iou.item(),
+                'test_step_sensitivity': sensitivity.item(),
+                'test_step_specificity': specificity.item()
                 }
 
     def test_epoch_end(self, outputs):
