@@ -26,23 +26,26 @@ class Lightning_Unet(pl.LightningModule):
         self.hparams = hparams
 
         # optimize
+        # The value is sampled from the range [low,high) in the log domain. When low=high,
+        # the value of low will be returned.
         self.lr = trial.suggest_loguniform("learning_rate", 1e-5, 1)
         self.weight_decay = trial.suggest_loguniform("weight_decay", 1e-5, 1)
         self.normalization = trial.suggest_categorical('normalization', ['GroupNorm', 'InstanceNorm3d'])
         self.downsampling_type = trial.suggest_categorical('downsampling', ['conv', 'max'])
-        self.kernal_size = trial.suggest_int('kernal_size', 3, 5)
+        self.deepth = trial.suggest_categorical('deepth', [3, 4, 5])
+        self.kernal_size = trial.suggest_categorical('kernal_size', [3, 5])
         self.module_type = trial.suggest_categorical('module_type', ['Unet', 'ResUnet'])
+        self.threshold = trial.suggest_loguniform("threshold", 0.5, 1)
 
         self.unet = UNet(
             in_channels=1,
             out_classes=1,
-            num_encoding_blocks=3,
+            num_encoding_blocks=self.deepth,
             out_channels_first_layer=8,
             kernal_size=self.kernal_size,
             normalization=self.normalization,
             module_type=self.module_type,
             downsampling_type=self.downsampling_type,
-            padding=2,
             dropout=0,
         )
         # self.lr = self.hparams.learning_rate
@@ -63,29 +66,31 @@ class Lightning_Unet(pl.LightningModule):
         #     "batch_idx": None,
         #     "filename": None
         # }
-        # self.subjects = get_subjects()
-        # random.seed(42)
-        # random.shuffle(self.subjects)  # shuffle it to pick the val set
-        # if COMPUTECANADA:
-        #     self.subjects = self.subjects[:500]
-        # num_subjects = len(self.subjects)
-        # num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
-        # self.training_subjects = self.subjects[:num_training_subjects]
-        # self.validation_subjects = self.subjects[num_training_subjects:]
-
-    def forward(self, x: Tensor) -> Tensor:
-        return self.unet(x)
-
-    def setup(self, stage):
         self.subjects = get_subjects()
         random.seed(42)
         random.shuffle(self.subjects)  # shuffle it to pick the val set
         if COMPUTECANADA:
             self.subjects = self.subjects[:500]
+        else:
+            self.subjects = self.subjects[:3]
         num_subjects = len(self.subjects)
         num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
         self.training_subjects = self.subjects[:num_training_subjects]
         self.validation_subjects = self.subjects[num_training_subjects:]
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self.unet(x)
+
+    # def setup(self, stage):
+    #     self.subjects = get_subjects()
+    #     random.seed(42)
+    #     random.shuffle(self.subjects)  # shuffle it to pick the val set
+    #     if COMPUTECANADA:
+    #         self.subjects = self.subjects[:500]
+    #     num_subjects = len(self.subjects)
+    #     num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
+    #     self.training_subjects = self.subjects[:num_training_subjects]
+    #     self.validation_subjects = self.subjects[num_training_subjects:]
 
     def train_dataloader(self) -> DataLoader:
         training_transform = get_train_transforms()
@@ -126,7 +131,6 @@ class Lightning_Unet(pl.LightningModule):
                                     lr=self.lr,
                                     momentum=0.1,
                                     weight_decay=self.weight_decay)
-                                    # weight_decay=0.01)
         # optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.learning_rate)
         # scheduler = MultiStepLR(optimizer, milestones=[3, 10], gamma=0.1)
         scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=0.001, max_lr=1)
@@ -235,7 +239,7 @@ class Lightning_Unet(pl.LightningModule):
         #     "val_specificity": outputs[0]['val_step_specificity']
         # }
         # return {"loss": avg_loss, "val_dice": avg_val_dice, 'log': tensorboard_logs}
-        return {"loss": avg_loss, "val_dice": avg_val_dice}
+        return {"loss": avg_loss, "val_loss": avg_loss, "val_dice": avg_val_dice}
 
     def test_step(self, batch, batch_idx):
         inputs, targets = self.prepare_batch(batch)

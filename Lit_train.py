@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from lit_unet import Lightning_Unet
 from data.const import COMPUTECANADA
 import shutil
+from pathlib import Path
 import pickle
 import pathlib
 import os
@@ -25,11 +26,11 @@ class MetricsCallback(Callback):
 
 
 def objective(trial):
-# def main():
     parser = ArgumentParser(description='Trainer args', add_help=False)
     parser.add_argument("--gpus", type=int, default=1, help='which gpus')
     parser.add_argument("--TensorBoardLogger", dest='TensorBoardLogger', default='/home/jq/Desktop/log',
                         help='TensorBoardLogger dir')
+    parser.add_argument("--nodes", type=int, default=1, help='how many nodes')
     parser.add_argument("--name", dest='name', default="only using one dataset, uncropped data")
     parser.add_argument("--pruning", "-p", action="store_true",
                          help="Activate the pruning feature. `MedianPruner` stops unpromising "
@@ -37,13 +38,22 @@ def objective(trial):
     parser = Lightning_Unet.add_model_specific_args(parser)
     hparams = parser.parse_args()
 
-    default_root_dir = "./log"
-    checkpoint_file = "./log/checkpoint/{epoch}-{val_dice:.2f}"
+    if COMPUTECANADA:
+        cur_path = Path(__file__).resolve().parent.parent
+        default_root_dir = cur_path / "log"
+        checkpoint_file = Path(__file__).resolve().parent / "checkpoint/{epoch}-{val_dice:.2f}"
+        if not os.path.exists(Path(__file__).resolve().parent / "checkpoint"):
+            os.mkdir(Path(__file__).resolve().parent / "checkpoint")
+        if not os.path.exists(Path(__file__).resolve().parent / "result"):
+            os.mkdir(Path(__file__).resolve().parent / "result")
+    else:
+        default_root_dir = "./log"
+        checkpoint_file = "./log/checkpoint"
+        if not os.path.exists(Path(__file__).resolve().parent / "checkpoint"):
+            os.mkdir(Path(__file__).resolve().parent / "checkpoint")
 
     if not os.path.exists(default_root_dir):
         os.mkdir(default_root_dir)
-    if not os.path.exists("./log/checkpoint"):
-        os.mkdir("./log/checkpoint")
 
     # After training finishes, use best_model_path to retrieve the path to the best
     # checkpoint file and best_model_score to retrieve its score.
@@ -74,7 +84,7 @@ def objective(trial):
     trainer = Trainer(
         gpus=hparams.gpus,
         # amp_level='O2', precision=16,
-        # num_nodes=2, distributed_backend='ddp',
+        num_nodes=hparams.nodes, distributed_backend='ddp',
         check_val_every_n_epoch=1,
         # log every k batches instead
         row_log_interval=10,
@@ -89,6 +99,7 @@ def objective(trial):
         logger=False,
         # logger=tb_logger,
         max_epochs=10000,
+        # max_epochs=2,
         # resume_from_checkpoint='./log/checkpoint',
         profiler=True,
         # auto_lr_find=True,
