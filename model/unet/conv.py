@@ -10,7 +10,7 @@ class ConvolutionalBlock(nn.Module):
             in_channels: int,
             out_channels: int,
             normalization: Optional[str] = None,
-            kernel_size: int = 5,
+            kernal_size: int = 5,
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
             dropout: float = 0.3,
@@ -28,29 +28,35 @@ class ConvolutionalBlock(nn.Module):
         conv_class = getattr(nn, class_name)
         conv_layer = None
         conv_layer1 = None
-        conv_layer2 = None
-        if kernel_size == 5:
+        if kernal_size == 5:
             conv_layer = conv_class(
                 in_channels,
                 out_channels,
-                kernel_size,
-                padding=(kernel_size + 1) // 2 - 1,
+                kernal_size,
+                padding=(kernal_size + 1) // 2 - 1,
                 padding_mode=padding_mode,
-                # dilation=dilation,
             )
-        elif kernel_size == 3:
+        elif kernal_size == 3:
             conv_layer1 = conv_class(
                 in_channels,
-                in_channels,
-                kernel_size,
-                padding=(kernel_size + 1) // 2 - 1,
+                out_channels,
+                kernal_size,
+                padding=(kernal_size + 1) // 2 - 1,
                 padding_mode=padding_mode,
             )
-            conv_layer2 = conv_class(
+            conv_layer = conv_class(
+                out_channels,
+                out_channels,
+                kernal_size,
+                padding=(kernal_size + 1) // 2 - 1,
+                padding_mode=padding_mode,
+            )
+        elif kernal_size == 1:
+            conv_layer = conv_class(
                 in_channels,
                 out_channels,
-                kernel_size,
-                padding=(kernel_size + 1) // 2 - 1,
+                kernal_size,
+                padding=(kernal_size + 1) // 2 - 1,
                 padding_mode=padding_mode,
             )
 
@@ -72,7 +78,7 @@ class ConvolutionalBlock(nn.Module):
                 class_name = normalization
                 norm_class = getattr(nn, class_name)
                 # num_features = in_channels if preactivation else out_channels
-                norm_layer = norm_class(affine=True, track_running_stats=True)
+                norm_layer = norm_class(num_features=out_channels, affine=True, track_running_stats=True)
 
         activation_layer = None
         if activation is not None:
@@ -83,9 +89,8 @@ class ConvolutionalBlock(nn.Module):
         #     self.add_if_not_none(block, activation_layer)
         #     self.add_if_not_none(block, conv_layer)
         # else:
-        self.add_if_not_none(block, conv_layer)
         self.add_if_not_none(block, conv_layer1)
-        self.add_if_not_none(block, conv_layer2)
+        self.add_if_not_none(block, conv_layer)
         self.add_if_not_none(block, norm_layer)
         self.add_if_not_none(block, activation_layer)
 

@@ -22,7 +22,6 @@ import random
 
 class Lightning_Unet(pl.LightningModule):
     def __init__(self, hparams, trial):
-    # def __init__(self, hparams):
         super(Lightning_Unet, self).__init__()
         self.hparams = hparams
 
@@ -32,7 +31,7 @@ class Lightning_Unet(pl.LightningModule):
         self.normalization = trial.suggest_categorical('normalization', ['GroupNorm', 'InstanceNorm3d'])
         self.downsampling_type = trial.suggest_categorical('downsampling', ['conv', 'max'])
         self.kernal_size = trial.suggest_int('kernal_size', 3, 5)
-        self.module_type = trial.suggest_categorical('module_type', ['Unet', 'DenseUnet', 'ResUnet'])
+        self.module_type = trial.suggest_categorical('module_type', ['Unet', 'ResUnet'])
 
         self.unet = UNet(
             in_channels=1,
@@ -46,24 +45,33 @@ class Lightning_Unet(pl.LightningModule):
             padding=2,
             dropout=0,
         )
-        self.lr = self.hparams.learning_rate
+        # self.lr = self.hparams.learning_rate
 
-        self.max_loss_img = {
-            "loss": 0,
-            "img": None,
-            "label": None,
-            "prob": None,
-            "batch_idx": None,
-            "filename": None
-        }
-        self.min_loss_img = {
-            "loss": 1,
-            "img": None,
-            "label": None,
-            "prob": None,
-            "batch_idx": None,
-            "filename": None
-        }
+        # self.max_loss_img = {
+        #     "loss": 0,
+        #     "img": None,
+        #     "label": None,
+        #     "prob": None,
+        #     "batch_idx": None,
+        #     "filename": None
+        # }
+        # self.min_loss_img = {
+        #     "loss": 1,
+        #     "img": None,
+        #     "label": None,
+        #     "prob": None,
+        #     "batch_idx": None,
+        #     "filename": None
+        # }
+        # self.subjects = get_subjects()
+        # random.seed(42)
+        # random.shuffle(self.subjects)  # shuffle it to pick the val set
+        # if COMPUTECANADA:
+        #     self.subjects = self.subjects[:500]
+        # num_subjects = len(self.subjects)
+        # num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
+        # self.training_subjects = self.subjects[:num_training_subjects]
+        # self.validation_subjects = self.subjects[num_training_subjects:]
 
     def forward(self, x: Tensor) -> Tensor:
         return self.unet(x)
@@ -72,7 +80,8 @@ class Lightning_Unet(pl.LightningModule):
         self.subjects = get_subjects()
         random.seed(42)
         random.shuffle(self.subjects)  # shuffle it to pick the val set
-        self.subjects = self.subjects[:500]
+        if COMPUTECANADA:
+            self.subjects = self.subjects[:500]
         num_subjects = len(self.subjects)
         num_training_subjects = int(num_subjects * 0.9)  # （5074+359+21） * 0.9 used for training
         self.training_subjects = self.subjects[:num_training_subjects]
@@ -163,37 +172,38 @@ class Lightning_Unet(pl.LightningModule):
         #     self.min_loss_img["prob"] = probs
         #     self.min_loss_img["batch_idx"] = batch_idx
         #     self.min_loss_img["filename"] = batch['filename'][0]
-        rand = random.randint(1, 180)
-        if batch_idx != 0 and batch_idx == rand:  # save total about 10 picture
-            input = inputs.chunk(inputs.size()[0], 0)[0]  # split into 1 in the dimension 0
-            target = targets.chunk(targets.size()[0], 0)[0]  # split into 1 in the dimension 0
-            logit = probs.chunk(logits.size()[0], 0)[0]  # split into 1 in the dimension 0
-            log_all_info(self, input, target, logit, batch_idx, "training")
-        tensorboard_logs = {"train_loss": loss, "train_IoU": iou, "train_dice": dice}
-        return {'loss': loss, "log": tensorboard_logs}
+        # rand = random.randint(1, 180)
+        # if batch_idx != 0 and batch_idx == rand:  # save total about 10 picture
+        #     input = inputs.chunk(inputs.size()[0], 0)[0]  # split into 1 in the dimension 0
+        #     target = targets.chunk(targets.size()[0], 0)[0]  # split into 1 in the dimension 0
+        #     logit = probs.chunk(logits.size()[0], 0)[0]  # split into 1 in the dimension 0
+        #     log_all_info(self, input, target, logit, batch_idx, "training")
+        # tensorboard_logs = {"train_loss": loss, "train_IoU": iou, "train_dice": dice}
+        # return {'loss': loss, "log": tensorboard_logs}
+        return {'loss': loss}
 
-    def training_epoch_end(self, outputs):
+    # def training_epoch_end(self, outputs):
         # log_all_info(self, self.max_loss_img["img"], self.max_loss_img["label"], self.max_loss_img["prob"],
         #              self.max_loss_img["batch_idx"], f"training: max_loss filename:{self.max_loss_img['filename']}")
         # log_all_info(self, self.min_loss_img["img"], self.min_loss_img["label"], self.min_loss_img["prob"],
         #              self.min_loss_img["batch_idx"], f"training: min_loss filename:{self.min_loss_img['filename']}")
         # loss = F.binary_cross_entropy_with_logits(logits, targets)
-        avg_loss = torch.stack([x['train_loss'] for x in outputs]).mean()
-        self.max_loss_img = {
-            "loss": 0,
-            "img": None,
-            "label": None,
-            "prob": None,
-            "batch_idx": None,
-        }
-        self.min_loss_img = {
-            "loss": 1,
-            "img": None,
-            "label": None,
-            "prob": None,
-            "batch_idx": None,
-        }
-        return {"avg_loss": avg_loss}
+        # avg_loss = torch.stack([x['train_loss'] for x in outputs]).mean()
+        # self.max_loss_img = {
+        #     "loss": 0,
+        #     "img": None,
+        #     "label": None,
+        #     "prob": None,
+        #     "batch_idx": None,
+        # }
+        # self.min_loss_img = {
+        #     "loss": 1,
+        #     "img": None,
+        #     "label": None,
+        #     "prob": None,
+        #     "batch_idx": None,
+        # }
+        # return {"avg_loss": avg_loss}
 
     def validation_step(self, batch, batch_id):
         inputs, targets = self.prepare_batch(batch)
@@ -201,6 +211,7 @@ class Lightning_Unet(pl.LightningModule):
         # print(f"validation input range: {torch.min(inputs)} - {torch.max(inputs)}")
         logits = self(inputs)
         probs = torch.sigmoid(logits)  # compare the position
+        # print(f"probs shape: {probs.shape}")
         # loss = F.binary_cross_entropy_with_logits(logits, targets)
         loss = dice_loss(probs, targets)
         dice, iou, sensitivity, specificity = get_score(probs, targets)
@@ -216,14 +227,15 @@ class Lightning_Unet(pl.LightningModule):
         # torch.stack: Concatenates sequence of tensors along a new dimension.
         avg_loss = torch.stack([x['val_step_loss'] for x in outputs]).mean()
         avg_val_dice = torch.stack([x['val_step_dice'] for x in outputs]).mean()
-        tensorboard_logs = {
-            "val_loss": outputs[0]['val_step_loss'],  # the outputs is a dict wrapped in a list
-            "val_dice": outputs[0]['val_step_dice'],
-            "val_IoU": outputs[0]['val_step_IoU'],
-            "val_sensitivity": outputs[0]['val_step_sensitivity'],
-            "val_specificity": outputs[0]['val_step_specificity']
-        }
-        return {"loss": avg_loss, "val_dice": avg_val_dice, 'log': tensorboard_logs}
+        # tensorboard_logs = {
+        #     "val_loss": outputs[0]['val_step_loss'],  # the outputs is a dict wrapped in a list
+        #     "val_dice": outputs[0]['val_step_dice'],
+        #     "val_IoU": outputs[0]['val_step_IoU'],
+        #     "val_sensitivity": outputs[0]['val_step_sensitivity'],
+        #     "val_specificity": outputs[0]['val_step_specificity']
+        # }
+        # return {"loss": avg_loss, "val_dice": avg_val_dice, 'log': tensorboard_logs}
+        return {"loss": avg_loss, "val_dice": avg_val_dice}
 
     def test_step(self, batch, batch_idx):
         inputs, targets = self.prepare_batch(batch)
@@ -262,14 +274,15 @@ class Lightning_Unet(pl.LightningModule):
             f"avg sensitivity: {avg_sensitivity}",
             f"avg specificity: {avg_specificity}", sep='\n'
         )
-        tensorboard_logs = {
-            "test_loss": outputs[0]['test_step_loss'],  # the outputs is a dict wrapped in a list
-            "test_dice": outputs[0]['test_step_dice'],
-            "test_IoU": outputs[0]['test_step_IoU'],
-            "test_sensitivity": outputs[0]['test_step_sensitivity'],
-            "test_specificity": outputs[0]['test_step_specificity']
-        }
-        return {'log': tensorboard_logs}
+        # tensorboard_logs = {
+        #     "test_loss": outputs[0]['test_step_loss'],  # the outputs is a dict wrapped in a list
+        #     "test_dice": outputs[0]['test_step_dice'],
+        #     "test_IoU": outputs[0]['test_step_IoU'],
+        #     "test_sensitivity": outputs[0]['test_step_sensitivity'],
+        #     "test_specificity": outputs[0]['test_step_specificity']
+        # }
+        # return {'log': tensorboard_logs}
+        return {}
 
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser) -> ArgumentParser:

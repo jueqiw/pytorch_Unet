@@ -95,8 +95,8 @@ def objective(trial):
         # max_epochs=EPOCHS,
         callbacks=[metrics_callback],
     )
-    # model = Lightning_Unet(hparams, trial)
-    model = Lightning_Unet(hparams)
+
+    model = Lightning_Unet(hparams, trial)
     # model = LitUnet(args).load_from_checkpoint('./log/checkpoint')
 
     # Run learning rate finder
