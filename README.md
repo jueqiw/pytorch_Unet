@@ -10,17 +10,33 @@
 - [X] try other server
 - [X] install model
 - [X] test crop or not crop's dice
+- [X] modify learning rate
+- [X] read the plot image with maximum loss
+- [X] visualize the cropped image
+- [X] bid the image with the filename
 - [X] rebuild the data.tar file
-- [ ] change the file name from .nii.nii.gz to nii.gz
-- [ ] modify learning rate
-- [ ] read about nnUnet learning rate
-- [ ] try the Instance Normal instead of GN
-- [ ] change the kernal size
-- [ ] try dilated convolution
+- [X] using regularization
+- [X] fix plot image part
+- [X] test by 1 run, and let every model run
+- [X] try another two cluster
+### fine tune part
+- [ ] writing fine-tune part 
+- [X] try the Instance Normal instead of GN
 - [ ] try dice and BCE with weight
+- [X] try ResUnet
 - [ ] try denseUnet
-- [ ] try ResUnet
-- [ ] rewrite the interprate part
+- [ ] change the deepth of unet
+- [X] downsampling part
+- [X] change the kernal size
+
+### data prepare part
+- [ ] do nothing, using interplot
+- [ ] do cropping and patch-based
+- [ ] do resample, padding and interplot
+
+- [ ] reading nnUnet again and using padding and interplot instead of interplotting
+- [ ] read about nnUnet learning rate
+- [ ] try dilated convolution
 
 ## only test on the CC359 dataset
 

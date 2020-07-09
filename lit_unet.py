@@ -64,8 +64,6 @@ class Lightning_Unet(pl.LightningModule):
             "batch_idx": None,
             "filename": None
         }
-        # self.training_subjects = self.subjects[:10]
-        # self.validation_subjects = self.subjects[10:15]
 
     def forward(self, x: Tensor) -> Tensor:
         return self.unet(x)
@@ -117,7 +115,7 @@ class Lightning_Unet(pl.LightningModule):
         # Setting up the optimizer
         optimizer = torch.optim.SGD(self.parameters(),
                                     lr=self.lr,
-                                    momentum=0.9,
+                                    momentum=0.1,
                                     weight_decay=self.weight_decay)
                                     # weight_decay=0.01)
         # optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.learning_rate)

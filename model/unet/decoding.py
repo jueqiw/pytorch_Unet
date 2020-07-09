@@ -25,12 +25,11 @@ class Decoder(nn.Module):
             upsampling_type: str,
             num_decoding_blocks: int,
             normalization: Optional[str],
+            kernal_size: int = 5,
+            module_type: str = 'Unet',
             # preactivation: bool = False,
-            residual: bool = False,
-            padding: int = 0,
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
-            # initial_dilation: Optional[int] = None,
             dropout: float = 0.3,
             ):
         super().__init__()
@@ -43,7 +42,9 @@ class Decoder(nn.Module):
                 in_channels_skip_connection,
                 dimensions,
                 upsampling_type,
-                padding=padding,
+                normalization=normalization,
+                kernal_size=kernal_size,
+                module_type=module_type,
                 padding_mode=padding_mode,
                 activation=activation,
                 # dilation=self.dilation,
@@ -70,8 +71,8 @@ class DecodingBlock(nn.Module):
             dimensions: int,
             upsampling_type: str,
             normalization: Optional[str] = 'Group',
-            # residual: bool = False,
-            padding: int = 0,
+            kernal_size: int = 5,
+            module_type: str = 'Unet',
             padding_mode: str = 'zeros',
             activation: Optional[str] = 'ReLU',
             # dilation: Optional[int] = None,
@@ -81,6 +82,7 @@ class DecodingBlock(nn.Module):
         super().__init__()
 
         # self.residual = residual
+        self.module_type = module_type
 
         if upsampling_type == 'conv':
             if first_decoder_block:
@@ -101,44 +103,47 @@ class DecodingBlock(nn.Module):
             in_channels_first,
             out_channels,
             normalization=normalization,
-            # preactivation=preactivation,
-            padding=padding,
+            kernel_size=kernal_size,
             padding_mode=padding_mode,
             activation=activation,
-            # dilation=dilation,
             dropout=dropout,
         )
 
-        # in_channels_second = out_channels
-        # self.conv2 = ConvolutionalBlock(
-        #     dimensions,
-        #     in_channels_second,
-        #     out_channels,
-        #     # normalization=normalization,
-        #     # preactivation=preactivation,
-        #     padding=padding,
-        #     padding_mode=padding_mode,
-        #     activation=activation,
-        #     dilation=dilation,
-        #     dropout=dropout,
-        # )
+        in_channels_second = out_channels
+        self.conv2 = ConvolutionalBlock(
+            dimensions,
+            in_channels_second,
+            out_channels,
+            normalization=normalization,
+            kernel_size=kernal_size,
+            padding_mode=padding_mode,
+            activation=activation,
+            dropout=dropout,
+        )
 
-        # if residual:
-        #     self.conv_residual = ConvolutionalBlock(
-        #         dimensions,
-        #         in_channels_first,
-        #         out_channels,
-        #         kernel_size=1,
-        #         # normalization=None,
-        #         activation=None,
-        #     )
+        if module_type == 'ResUnet':
+            self.conv_residual = ConvolutionalBlock(
+                dimensions,
+                in_channels_first,
+                out_channels,
+                kernel_size=1,
+                normalization=None,
+                activation=None,
+            )
 
     def forward(self, skip_connection, x):
         x = self.upsample(x)  # upConvLayer
         # if self.all_size_input:
         #     x = self.crop(x, skip_connection)  # crop x according skip_connection
         x = torch.cat((skip_connection, x), dim=CHANNELS_DIMENSION)
-        x = self.conv1(x)
+        if self.module_type == "ResUnet":
+            connection = self.conv_residual(x)
+            x = self.conv1(x)
+            x = self.conv2(x)
+            x += connection
+        elif self.module_type == "Unet":
+            x = self.conv1(x)
+            x = self.conv2(x)
         return x
 
     def crop(self, x: Tensor, skip: Tensor) -> Tensor:
@@ -149,6 +154,15 @@ class DecodingBlock(nn.Module):
         diffT = skip.size()[2] - x.size()[2]
         diffH = skip.size()[3] - x.size()[3]
         diffW = skip.size()[4] - x.size()[4]
+
+        if self.num_block % 2 == 0:
+            x = F.pad(x, [diffW // 2, diffW - diffW // 2,
+                          diffH // 2, diffH - diffH // 2,
+                          diffT // 2, diffT - diffT // 2])
+        else:
+            x = F.pad(x, [diffW - diffW // 2, diffW // 2,
+                          diffH - diffH // 2, diffH // 2,
+                          diffT - diffT // 2, diffT // 2])
         return x
 
 
