@@ -19,24 +19,32 @@
 - [X] fix plot image part
 - [X] test by 1 run, and let every model run
 - [X] try another two cluster
+
 ### fine tune part
-- [ ] writing fine-tune part 
+- [X] delete some part of the data augment
+- [X] adding threshold fine-tune
 - [X] try the Instance Normal instead of GN
-- [ ] try dice and BCE with weight
+- [X] using data from the 1069 ones
 - [X] try ResUnet
-- [ ] try denseUnet
-- [ ] change the deepth of unet
+- [X] change the deepth of unet
 - [X] downsampling part
 - [X] change the kernal size
+- [ ] adding data augmentation fine tune
+- [ ] enable Mysql
+- [ ] Distributed Optimization
+- [ ] try dice and BCE with weight
+- [ ] try denseUnet
+- [ ] Be more careful with the learning rate
+- [ ] writing fine-tune part
 
 ### data prepare part
 - [ ] do nothing, using interplot
 - [ ] do cropping and patch-based
 - [ ] do resample, padding and interplot
 
+### Reading
 - [ ] reading nnUnet again and using padding and interplot instead of interplotting
 - [ ] read about nnUnet learning rate
-- [ ] try dilated convolution
 
 ## only test on the CC359 dataset
 
@@ -47,7 +55,6 @@
 | 3| dice|leaky ReLU|**12**|95.61%|98.54%|98.84%|
 
 ## test on the whole dataset ()
-
 | model|loss|activation|epoch| dice | sensitivity | specificity |
 |:-----:|:----:|:-----:|:----:|:-----:|:----:|:-----:|
 | 1| dice |ReLU |23|**96.57%**|**97.02%**|99.23%|
