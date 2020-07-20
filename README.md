@@ -1,46 +1,20 @@
-# pytorch_Unet
-- [X] add cropping
-- [X] try Leaky ReLU with negative_slope = <img src="https://render.githubusercontent.com/render/math?math=1e^{-2}">
-- [X] test cropping
-- [X] add parallel to cropping (not working)
-- [X] rewrite the compute loss part (not working)
-- [x] change the save file name to original name
-- [X] write test part, using not interpreted image
-- [X] rewrite part do not use temp disk
-- [X] try other server
-- [X] install model
-- [X] test crop or not crop's dice
-- [X] modify learning rate
-- [X] read the plot image with maximum loss
-- [X] visualize the cropped image
-- [X] bid the image with the filename
-- [X] rebuild the data.tar file
-- [X] using regularization
-- [X] fix plot image part
-- [X] test by 1 run, and let every model run
-- [X] try another two cluster
-
 ### fine tune part
-- [X] delete some part of the data augment
-- [X] adding threshold fine-tune
-- [X] try the Instance Normal instead of GN
-- [X] using data from the 1069 ones
-- [X] try ResUnet
-- [X] change the deepth of unet
-- [X] downsampling part
-- [X] change the kernal size
+- [X] fix kernal size = 3 problem
+- [ ] try the resample, padding and interplot method
 - [ ] adding data augmentation fine tune
-- [ ] enable Mysql
-- [ ] Distributed Optimization
+- [ ] adding one more layer without concat
 - [ ] try dice and BCE with weight
 - [ ] try denseUnet
 - [ ] Be more careful with the learning rate
+- [ ] read the pytorch lightning pruning part
 - [ ] writing fine-tune part
 
-### data prepare part
+### later to do 
 - [ ] do nothing, using interplot
 - [ ] do cropping and patch-based
-- [ ] do resample, padding and interplot
+- [ ] logging a good quality video of the brain, predicted probability, and predicted binary mask whenever you get such huge loss spike / changes.
+- [ ] when test, the label do not do the data augmentation resize part
+- [ ] write test part on the 1069 data
 
 ### Reading
 - [ ] reading nnUnet again and using padding and interplot instead of interplotting
