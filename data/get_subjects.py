@@ -21,36 +21,41 @@ def get_subjects():
     :return: list of subjects
     """
 
-    # if COMPUTECANADA:
-    #     datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
-    # else:
-    #     datasets = [CC359_DATASET_DIR]
-    #
-    # subjects = [
-    #     tio.Subject(
-    #             img=tio.Image(path=mri.img_path, type=tio.INTENSITY),
-    #             label=tio.Image(path=mri.label_path, type=tio.LABEL),
-    #             # store the dataset name to help plot the image later
-    #             # dataset=mri.dataset
-    #         ) for mri in get_path(datasets)
-    # ]
-
-    # using in the cropping folder
-    img_path_list = sorted([
-        Path(f) for f in sorted(glob(f"{str(CROPPED_IMG)}/**/*.nii*", recursive=True))
-    ])
-    label_path_list = sorted([
-        Path(f) for f in sorted(glob(f"{str(CROPPED_LABEL)}/**/*.nii.gz", recursive=True))
-    ])
+    if COMPUTECANADA:
+        datasets = [CC359_DATASET_DIR, NFBS_DATASET_DIR, ADNI_DATASET_DIR_1]
+    else:
+        datasets = [CC359_DATASET_DIR]
 
     subjects = [
         tio.Subject(
-                img=tio.Image(path=img_path, type=tio.INTENSITY),
-                label=tio.Image(path=label_path, type=tio.LABEL),
+                img=tio.Image(path=mri.img_path, type=tio.INTENSITY),
+                label=tio.Image(path=mri.label_path, type=tio.LABEL),
                 # store the dataset name to help plot the image later
                 # dataset=mri.dataset
-            ) for img_path, label_path in zip(img_path_list, label_path_list)
+            ) for mri in get_path(datasets)
     ]
+
+    # using in the cropping folder
+    # img_path_list = sorted([
+    #     Path(f) for f in sorted(glob(f"{str(CROPPED_IMG)}/**/*.nii*", recursive=True))
+    # ])
+    # label_path_list = sorted([
+    #     Path(f) for f in sorted(glob(f"{str(CROPPED_LABEL)}/**/*.nii.gz", recursive=True))
+    # ])
+    #
+    # subjects = []
+    #
+    # for img_path, label_path in zip(img_path_list, label_path_list):
+    #     # get the file name
+    #     _, filename = os.path.split(img_path)
+    #     name = re.search('(.*?).nii|(.*?).nii.gz', filename).group(1)
+    #     subject = tio.Subject(
+    #                 img=tio.Image(path=img_path, type=tio.INTENSITY),
+    #                 label=tio.Image(path=label_path, type=tio.LABEL),
+    #                 # store the dataset name to help plot the image later
+    #                 filename=name,
+    #             )
+    #     subjects.append(subject)
 
     random.seed(42)
     random.shuffle(subjects)  # shuffle it to pick the val set
