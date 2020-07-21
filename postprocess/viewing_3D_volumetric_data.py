@@ -63,7 +63,3 @@ if __name__ == "__main__":
         for i in range(0, 3):
             imageio.mimsave(save_folder / f"{i+1}.gif", frames[i], 'GIF-FI', duration=0.1)
         print("Finish!")
-
-
-
-

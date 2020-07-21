@@ -3,7 +3,14 @@ https://github.com/DM-Berger/unet-learn/blob/6dc108a9a6f49c6d6a50cd29d30eac4f727
 """
 
 import matplotlib.pyplot as plt
+from matplotlib import animation
+from matplotlib.colorbar import Colorbar
+from matplotlib.image import AxesImage
+from matplotlib.pyplot import Axes, Figure
+from matplotlib.text import Text
+from numpy import ndarray
 import numpy as np
+from tqdm.auto import tqdm, trange
 import os
 import torch as t
 
@@ -35,6 +42,17 @@ https://pytorch-lightning.readthedocs.io/en/latest/api/pytorch_lightning.loggers
 https://www.tensorflow.org/api_docs/python/tf/summary/create_file_writer
 ^^ these args look largely like things we don't care about ^^
 """
+
+
+def make_imgs(img: ndarray, imin: Any = None, imax: Any = None) -> ndarray:
+    """Apply a 3D binary mask to a 1-channel, 3D ndarray `img` by creating a 3-channel
+    image with masked regions shown in transparent blue. """
+    imin = img.min() if imin is None else imin
+    imax = img.max() if imax is None else imax
+    scaled = np.array(((img - imin) / (imax - imin)) * 255, dtype=int)  # img
+    if len(img.shape) == 3:
+        return scaled
+    raise ValueError("Only accepts 1-channel or 3-channel images")
 
 
 def get_logger(logdir: Path) -> TensorBoardLogger:
@@ -72,7 +90,20 @@ class BrainSlices:
         self.quarts = quarts
         self.quarts3_4 = quarts3_4
         self.slice_positions = ["1/4", "1/2", "3/4"]
+        self.masknames = ["Actual Brain Tissue (probability)",
+                          "Predicted Brain Tissue (probability)",
+                          "Predicted Brain Tissue (binary)"]
         self.shape = np.array(img_.shape)
+
+        # Use for mp4
+        n_slices = 4
+        self.orig = img_
+        self.img = img_
+        self.masks = [targ_, pred > 0.5]  # have threshold here, need to add
+        slice_base = np.array(self.img.shape) // n_slices
+        self.mask_video_names = ["Actual Brain Tissue (probability)",
+                                 "Predicted Brain Tissue (binary)"]
+        self.scale_imgs = make_imgs(self.img)
 
         self.imgs = OrderedDict(
             [
@@ -128,23 +159,25 @@ class BrainSlices:
         imin = np.min(true)
         imax = np.max(true)
         scaled = np.array(((true - imin) / (imax - imin)) * 255, dtype=int)
+        # The alpha blending value, between 0 (transparent) and 1 (opaque). This parameter is ignored for RGBA input data.
         true_args = dict(vmin=0, vmax=255, cmap="gray", alpha=0.5)
         mask_args = dict(vmin=0.0, vmax=1.0, cmap="gray", alpha=0.5)
 
+        # Display data as an image; i.e. on a 2D regular raster.
         axes[0].imshow(scaled, **true_args)
         axes[0].imshow(target, **mask_args)
-        axes[0].set_title("Actual Brain Tissue (probability)")
+        axes[0].set_title(self.masknames[0])
         axes[0].set_xticks([])
         axes[0].set_yticks([])
 
         axes[1].imshow(scaled, **true_args)
         axes[1].imshow(pred, **mask_args)
-        axes[1].set_title("Predicted Brain Tissue (probability)")
+        axes[1].set_title(self.masknames[1])
         axes[1].set_xticks([])
         axes[1].set_yticks([])
 
-        axes[2].imshow(scaled * np.array(pred > 0.9, dtype=float), **true_args)
-        axes[2].set_title("Predicted Brain Tissue (binary)")
+        axes[2].imshow(scaled * np.array(pred > 0.5, dtype=float), **true_args)
+        axes[2].set_title(self.masknames[2])
         axes[2].set_xticks([])
         axes[2].set_yticks([])
 
@@ -165,10 +198,10 @@ class BrainSlices:
             plt.close()
             return
 
-    def log(self, batch_idx: int, title: str) -> None:
+    def log(self, batch_idx: int, title: str, dice_score: float) -> None:
         logger = self.lightning.logger
         fig, axes = self.plot()
-        summary = f"{title}: Epoch {self.lightning.current_epoch + 1} - Batch {batch_idx}"
+        summary = f"{title}: Epoch {self.lightning.current_epoch + 1}, Batch {batch_idx}, dice: {dice_score}"
         logger.experiment.add_figure(summary, fig, close=True)
 
         # if you want to manually intervene, look at the code at
@@ -176,6 +209,119 @@ class BrainSlices:
         # permalink to version:
         # https://github.com/pytorch/pytorch/blob/780fa2b4892512b82c8c0aaba472551bd0ce0fad/torch/utils/tensorboard/_utils.py#L5
         # then use logger.experiment.add_image(summary, image)
+
+    # code is borrowed from: https://github.com/DM-Berger/autocrop/blob/master/autocrop/visualize.py#L125
+    def animate_masks(
+            self,
+            dpi: int = 100,
+            n_frames: int = 300,
+            fig_title: str = None,
+            outfile: Path = None,
+    ) -> None:
+        def get_slice(img: ndarray, mask: ndarray, ratio: float, threshold: float = 0.5) -> ndarray:
+            """Returns eig_img, raw_img"""
+            img = np.where(mask > threshold, 255, img)
+            if ratio < 0 or ratio > 1:
+                raise ValueError("Invalid slice position")
+            if len(img.shape) == 3:
+                x_max, y_max, z_max = np.array(img.shape, dtype=int)
+                x, y, z = np.array(np.floor(np.array(img.shape) * ratio), dtype=int)
+            elif len(img.shape) == 4:
+                x_max, y_max, z_max, _ = np.array(img.shape, dtype=int)
+                x, y, z = np.array(np.floor(np.array(img.shape[:-1]) * ratio), dtype=int)
+            x = int(10 + ratio * (x_max - 20))  # make x go from 10:-10 of x_max
+            y = int(10 + ratio * (y_max - 20))  # make x go from 10:-10 of x_max
+            x = x - 1 if x == x_max else x
+            y = y - 1 if y == y_max else y
+            z = z - 1 if z == z_max else z
+            return np.concatenate([img[x, :, :], img[:, y, :], img[:, :, z]], axis=1)
+
+        def init_frame(img: ndarray, mask: ndarray, ratio: float, fig: Figure, ax: Axes, title) -> Tuple[
+            AxesImage, Colorbar, Text]:
+            image_slice = get_slice(img, mask=mask, ratio=ratio)
+            true_args = dict(vmin=0, vmax=255, cmap="gray", alpha=0.7)
+
+            im = ax.imshow(image_slice, animated=True, **true_args)
+            # im = ax.imshow(image_slice, animated=True)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            title = ax.set_title(title)
+            cb = fig.colorbar(im, ax=ax)
+            print()
+            return im, cb, title
+
+        def update_axis(img: ndarray, mask: ndarray, ratio: float, im: AxesImage) -> AxesImage:
+            image_slice = get_slice(img, mask=mask, ratio=ratio)
+            # vn, vm = get_vranges()
+            im.set_data(image_slice)
+            # im.set_clim(vn, vm)
+            # we don't have to update cb, it is linked
+            return im
+
+        # owe a lot to below for animating the colorbars
+        # https://stackoverflow.com/questions/39472017/how-to-animate-the-colorbar-in-matplotlib
+        def init() -> Tuple[Figure, Axes, List[AxesImage], List[Colorbar]]:
+            fig: Figure
+            axes: Axes
+            fig, axes = plt.subplots(nrows=len(self.masks), ncols=1, sharex=False, sharey=False)  # 3
+
+            ims: List[AxesImage] = []
+            cbs: List[Colorbar] = []
+
+            for ax, img, mask, title in zip(axes.flat, self.scale_imgs, self.masks, self.mask_video_names):
+                im, cb, title = init_frame(img=img, mask=mask, ratio=0.0, fig=fig, ax=ax, title=title)
+                ims.append(im)
+                cbs.append(cb)
+
+            if fig_title is not None:
+                fig.suptitle(fig_title)
+            # fig.tight_layout(h_pad=0)
+            fig.set_size_inches(w=10, h=5)
+            fig.subplots_adjust(hspace=0.2, wspace=0.0)
+            plt.savefig("./first_img.jpg")
+            return fig, axes, ims, cbs
+
+        # def show_init_flg():
+        #     fig, axes = plt.subplots()
+
+
+        N_FRAMES = n_frames
+        ratios = np.linspace(0, 1, num=N_FRAMES)
+
+        fig, axes, ims, cbs = init()
+
+
+        # awkward, but we need this defined after to close over the above variables
+        def animate(f: int) -> Any:
+            ratio = ratios[f]
+            updated = []
+            for im, img, mask in zip(ims, self.scale_imgs, self.masks):
+                updated.append(update_axis(img=img, mask=mask, ratio=ratio, im=im))
+            return updated
+
+        ani = animation.FuncAnimation(
+            fig=fig,
+            func=animate,
+            frames=N_FRAMES,
+            blit=False,
+            interval=3600 / N_FRAMES,
+            repeat_delay=100 if outfile is None else None,
+        )
+
+        if outfile is None:
+            plt.show()
+        else:
+            pbar = tqdm(total=100, position=1, desc='mp4')
+            def prog_logger(current_frame: int, total_frames: int = N_FRAMES) -> Any:
+                if (current_frame % (total_frames // 10)) == 0 and (current_frame != 0):
+                    pbar.update(10)
+                # tqdm.write("Done task %i" % (100 * current_frame / total_frames))
+                #     print("Saving... {:2.1f}%".format(100 * current_frame / total_frames))
+
+            # writervideo = animation.FFMpegWriter(fps=60)
+            ani.save(outfile, codec="h264", dpi=dpi, progress_callback=prog_logger)
+            # ani.save(outfile, progress_callback=prog_logger, writer=writervideo)
+            pbar.close()
 
 
 def log_weights(module: LightningModule) -> None:
@@ -189,7 +335,16 @@ https://pytorch.org/docs/stable/tensorboard.html
 """
 
 
-def log_all_info(module: LightningModule, img: Tensor, target: Tensor, logist: Tensor, batch_idx: int, title: str) -> None:
+def log_all_info(module: LightningModule, img: Tensor, target: Tensor, logist: Tensor, batch_idx: int,
+                 title: str, dice_score: float) -> None:
     """Helper for decluttering training loop. Just performs all logging functions."""
-    BrainSlices(module, img, target, logist).log(batch_idx, title)
+    brainSlice = BrainSlices(module, img, target, logist)
+    brainSlice.log(batch_idx, title, dice_score)
+
+    if not os.path.exists('./mp4'):
+        os.mkdir('./mp4')
+
+    brainSlice.animate_masks(fig_title=f"epoch: {module.current_epoch}, batch: {batch_idx}, dice_score: {dice_score}",
+                             outfile=Path(
+                                 f"./mp4/epoch={module.current_epoch}_batch={batch_idx}_dice_score={dice_score}.mp4"))
     log_weights(module)
