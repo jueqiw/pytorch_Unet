@@ -7,15 +7,12 @@ TMP = os.environ.get("SLURM_TMPDIR")  # run in compute canada, also in a job
 ACT = os.environ.get("SLURM_ACCOUNT")  # run in compute canada, but not in a job
 
 COMPUTECANADA = False
+SIZE = 64
 
 if TMP or ACT:  # running inside Compute Canada
     COMPUTECANADA = True
-
-
-if COMPUTECANADA:
     SIZE = 128
-else:
-    SIZE = 64
+
 
 # DATASET_DIR = Path("/project/6005889/U-Net_MRI-Data")
 #

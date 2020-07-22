@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --account=def-jlevman
-#SBATCH --gres=gpu:v100:4
-#SBATCH --nodes=1  # must set 2 if use four than it will stop
-#SBATCH --ntasks-per-node=2  # 4 would be more efficient but not working, do not know why
+#SBATCH --nodes=1
+#SBATCH --gres=gpu:v100:4  # on Cedar
+#SBATCH --ntasks-per-node=2
 #SBATCH --cpus-per-task=10  #maximum CPU cores per GPU request: 6 on Cedar, 16 on Graham.
-#SBATCH --mem=128G   # memory
-#SBATCH --output=tune-%j.out  # %N for node name, %j for jobID
+#SBATCH --mem=128G  # memory
+#SBATCH --output=uncropped-%j.out  # %N for node name, %j for jobID
 #SBATCH --time=03-00:00      # time (DD-HH:MM)
 #SBATCH --mail-user=x2019cwn@stfx.ca # used to send email
 #SBATCH --mail-type=ALL
@@ -38,22 +38,21 @@ tar -xf /home/jueqi/scratch/Data/readable_data.tar -C work && echo "$(date +"%T"
 
 cd work
 ## The computations are done, so clean up the data set...
+# avoiding batch_size < gpus number
 BATCH_SIZE=4
-GPUS=4
 NODES=1
+GPUS=4
 LOG_DIR=/home/jueqi/scratch/log
 #LOG_DIR=/project/6005889/U-Net_MRI-Data/log
 
 # run script
 echo -e '\n\n\n'
-#tensorboard --logdir="$LOG_DIR" --host 0.0.0.0 & python3 /home/jueqi/scratch/Unet1/Lit_train.py \
-python3 /home/jueqi/scratch/Unet_fine_tune/Lit_train.py \
+tensorboard --logdir="$LOG_DIR" --host 0.0.0.0 & python3 /home/jueqi/scratch/Unet2/Lit_train.py \
        --gpus=$GPUS \
-       --nodes=$NODES \
        --batch_size=$BATCH_SIZE \
-       --name="fine tune" \
-       --TensorBoardLogger="$LOG_DIR" \
-       --pruning
+       --nodes=$NODES \
+       --name="using no cropping data, dice loss" \
+       --TensorBoardLogger="$LOG_DIR"
 
 
 #python3 /home/jueqi/projects/def-jlevman/jueqi/pytorch_Unet/data/const.py
