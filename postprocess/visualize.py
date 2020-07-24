@@ -44,14 +44,14 @@ https://www.tensorflow.org/api_docs/python/tf/summary/create_file_writer
 """
 
 
-def make_imgs(img: ndarray, imin: Any = None, imax: Any = None) -> ndarray:
+def make_imgs(img: ndarray, imin: Any = None, imax: Any = None) -> [ndarray]:
     """Apply a 3D binary mask to a 1-channel, 3D ndarray `img` by creating a 3-channel
     image with masked regions shown in transparent blue. """
     imin = img.min() if imin is None else imin
     imax = img.max() if imax is None else imax
     scaled = np.array(((img - imin) / (imax - imin)) * 255, dtype=int)  # img
     if len(img.shape) == 3:
-        return scaled
+        return [scaled] * 3
     raise ValueError("Only accepts 1-channel or 3-channel images")
 
 
@@ -59,25 +59,9 @@ def get_logger(logdir: Path) -> TensorBoardLogger:
     return TensorBoardLogger(str(logdir), name="unet")
 
 
-def slice_label(i: int, mids: Tensor, slicekey: str):
-    quarts = mids // 2  # slices at first quarter of the way through
-    quarts3_4 = mids + quarts  # slices 3/4 of the way through
-    keymap = {"1/4": quarts, "1/2": mids, "3/4": quarts3_4}
-    idx = keymap[slicekey]
-    if i == 0:
-        return f"[{idx[i]},:,:]"
-    if i == 1:
-        return f"[:,{idx[i]},:]"
-    if i == 2:
-        return f"[:,:,{idx[i]}]"
-
-    f"[{idx[i]},:,:]", f"[:,{idx[i]},:]", f"[:,:,{idx[i]}]"
-    raise IndexError("Only three dimensions supported.")
-
-
 # https://www.tensorflow.org/tensorboard/image_summaries#logging_arbitrary_image_data
 class BrainSlices:
-    def __init__(self, lightning: LightningModule, img: Tensor, target_: Tensor, prediction: Tensor):
+    def __init__(self, lightning: LightningModule, img: Tensor, target_: Tensor, prediction: Tensor, threshold: float):
         # lol mypy type inference really breaks down here...
         self.lightning = lightning
         img_: ndarray = img.cpu().detach().numpy().squeeze()
@@ -94,16 +78,21 @@ class BrainSlices:
                           "Predicted Brain Tissue (probability)",
                           "Predicted Brain Tissue (binary)"]
         self.shape = np.array(img_.shape)
+        self.threshold = threshold
 
-        # Use for mp4
-        n_slices = 4
-        self.orig = img_
+        # Those use for mp4
         self.img = img_
-        self.masks = [targ_, pred > 0.5]  # have threshold here, need to add
-        slice_base = np.array(self.img.shape) // n_slices
-        self.mask_video_names = ["Actual Brain Tissue (probability)",
-                                 "Predicted Brain Tissue (binary)"]
+        # print(f"img shape: {self.img.shape}")
+        self.masks = [np.ones([*self.img.shape], dtype=int), targ_, pred > self.threshold]
+        self.mask_video_names = [
+            "original images",
+            "Actual Brain Tissue (probability)",
+            "Predicted Brain Tissue (binary)"
+        ]
         self.scale_imgs = make_imgs(self.img)
+        self.scale_imgs = np.where(self.masks, self.scale_imgs, 0)
+        # print(f"masks shape: {self.masks.shape}")
+        # print(f"scale_imgs shape: {self.scale_imgs.shape}")
 
         self.imgs = OrderedDict(
             [
@@ -126,11 +115,6 @@ class BrainSlices:
                 ("3/4", (pred[quarts3_4[0], :, :], pred[:, quarts3_4[1], :], pred[:, :, quarts3_4[2]])),
             ]
         )
-        self.labels = {
-            "1/4": [f"[{quarts[0]},:,:]", f"[:,{quarts[1]},:]", f"[:,:,{quarts[2]}]"],
-            "1/2": [f"[{mids[0]},:,:]", f"[:,{mids[1]},:]", f"[:,:,{mids[2]}]"],
-            "3/4": [f"[{quarts3_4[0]},:,:]", f"[:,{quarts3_4[1]},:]", f"[:,:,{quarts3_4[2]}]"],
-        }
 
     def plot(self) -> Tuple[Figure, Axes]:
         nrows, ncols = 3, 1  # one row for each slice position
@@ -176,7 +160,7 @@ class BrainSlices:
         axes[1].set_xticks([])
         axes[1].set_yticks([])
 
-        axes[2].imshow(scaled * np.array(pred > 0.5, dtype=float), **true_args)
+        axes[2].imshow(scaled * np.array(pred > self.threshold, dtype=float), **true_args)
         axes[2].set_title(self.masknames[2])
         axes[2].set_xticks([])
         axes[2].set_yticks([])
@@ -214,13 +198,13 @@ class BrainSlices:
     def animate_masks(
             self,
             dpi: int = 100,
-            n_frames: int = 300,
+            n_frames: int = 128,
             fig_title: str = None,
             outfile: Path = None,
     ) -> None:
-        def get_slice(img: ndarray, mask: ndarray, ratio: float, threshold: float = 0.5) -> ndarray:
+        def get_slice(img: ndarray, ratio: float) -> ndarray:
             """Returns eig_img, raw_img"""
-            img = np.where(mask > threshold, 255, img)
+
             if ratio < 0 or ratio > 1:
                 raise ValueError("Invalid slice position")
             if len(img.shape) == 3:
@@ -234,12 +218,14 @@ class BrainSlices:
             x = x - 1 if x == x_max else x
             y = y - 1 if y == y_max else y
             z = z - 1 if z == z_max else z
-            return np.concatenate([img[x, :, :], img[:, y, :], img[:, :, z]], axis=1)
+            img_np = np.concatenate([img[x, :, :], img[:, y, :], img[:, :, z]], axis=1)
+            return img_np
 
-        def init_frame(img: ndarray, mask: ndarray, ratio: float, fig: Figure, ax: Axes, title) -> Tuple[
+        def init_frame(img: ndarray, ratio: float, fig: Figure, ax: Axes, title) -> Tuple[
             AxesImage, Colorbar, Text]:
-            image_slice = get_slice(img, mask=mask, ratio=ratio)
-            true_args = dict(vmin=0, vmax=255, cmap="gray", alpha=0.7)
+            image_slice = get_slice(img, ratio=ratio)
+            # the bigger alpha, the image would become more black
+            true_args = dict(vmin=0, vmax=255, cmap="bone", alpha=0.8)
 
             im = ax.imshow(image_slice, animated=True, **true_args)
             # im = ax.imshow(image_slice, animated=True)
@@ -247,13 +233,15 @@ class BrainSlices:
             ax.set_yticks([])
             title = ax.set_title(title)
             cb = fig.colorbar(im, ax=ax)
-            print()
             return im, cb, title
 
-        def update_axis(img: ndarray, mask: ndarray, ratio: float, im: AxesImage) -> AxesImage:
-            image_slice = get_slice(img, mask=mask, ratio=ratio)
+        def update_axis(img: ndarray, ratio: float, im: AxesImage) -> AxesImage:
+            image_slice = get_slice(img, ratio=ratio)
+            # mask_slice = get_slice(mask, ratio=ratio)
+
             # vn, vm = get_vranges()
             im.set_data(image_slice)
+            # im.set_data(mask_slice)
             # im.set_clim(vn, vm)
             # we don't have to update cb, it is linked
             return im
@@ -263,40 +251,34 @@ class BrainSlices:
         def init() -> Tuple[Figure, Axes, List[AxesImage], List[Colorbar]]:
             fig: Figure
             axes: Axes
-            fig, axes = plt.subplots(nrows=len(self.masks), ncols=1, sharex=False, sharey=False)  # 3
+            fig, axes = plt.subplots(nrows=3, ncols=1, sharex=False, sharey=False)  # 3
 
             ims: List[AxesImage] = []
             cbs: List[Colorbar] = []
 
             for ax, img, mask, title in zip(axes.flat, self.scale_imgs, self.masks, self.mask_video_names):
-                im, cb, title = init_frame(img=img, mask=mask, ratio=0.0, fig=fig, ax=ax, title=title)
+                im, cb, title = init_frame(img=img, ratio=0.0, fig=fig, ax=ax, title=title)
                 ims.append(im)
                 cbs.append(cb)
 
             if fig_title is not None:
                 fig.suptitle(fig_title)
-            # fig.tight_layout(h_pad=0)
-            fig.set_size_inches(w=10, h=5)
+            fig.tight_layout(h_pad=0)
+            fig.set_size_inches(w=12, h=10)  # The width of the entire image displayed
             fig.subplots_adjust(hspace=0.2, wspace=0.0)
-            plt.savefig("./first_img.jpg")
             return fig, axes, ims, cbs
-
-        # def show_init_flg():
-        #     fig, axes = plt.subplots()
-
 
         N_FRAMES = n_frames
         ratios = np.linspace(0, 1, num=N_FRAMES)
 
         fig, axes, ims, cbs = init()
 
-
         # awkward, but we need this defined after to close over the above variables
         def animate(f: int) -> Any:
             ratio = ratios[f]
             updated = []
             for im, img, mask in zip(ims, self.scale_imgs, self.masks):
-                updated.append(update_axis(img=img, mask=mask, ratio=ratio, im=im))
+                updated.append(update_axis(img=img, ratio=ratio, im=im))
             return updated
 
         ani = animation.FuncAnimation(
@@ -304,7 +286,7 @@ class BrainSlices:
             func=animate,
             frames=N_FRAMES,
             blit=False,
-            interval=3600 / N_FRAMES,
+            interval=24000 / N_FRAMES,
             repeat_delay=100 if outfile is None else None,
         )
 
@@ -312,6 +294,7 @@ class BrainSlices:
             plt.show()
         else:
             pbar = tqdm(total=100, position=1, desc='mp4')
+
             def prog_logger(current_frame: int, total_frames: int = N_FRAMES) -> Any:
                 if (current_frame % (total_frames // 10)) == 0 and (current_frame != 0):
                     pbar.update(10)
@@ -336,9 +319,9 @@ https://pytorch.org/docs/stable/tensorboard.html
 
 
 def log_all_info(module: LightningModule, img: Tensor, target: Tensor, logist: Tensor, batch_idx: int,
-                 title: str, dice_score: float) -> None:
+                 title: str, dice_score: float, threshold: float) -> None:
     """Helper for decluttering training loop. Just performs all logging functions."""
-    brainSlice = BrainSlices(module, img, target, logist)
+    brainSlice = BrainSlices(module, img, target, logist, threshold)
     brainSlice.log(batch_idx, title, dice_score)
 
     if not os.path.exists('./mp4'):
