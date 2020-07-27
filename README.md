@@ -2,6 +2,7 @@
 - [X] fix kernal size = 3 problem
 - [X] writing fine-tune part
 - [X] read the pytorch lightning pruning part
+- [ ] using checkpoint make the model run again
 - [ ] try the resample, padding and interplot method
 - [ ] do cropping and patch-based
 - [ ] adding data augmentation fine tune
@@ -10,7 +11,7 @@
 - [ ] try denseUnet
 - [ ] Be more careful with the learning rate
 - [ ] try leave one out
-- [ ] select value module type = 1 
+- [ ] select value module type = 1
 
 ### later to do 
 - [X] write the predict part, and using the mp4 part
@@ -20,6 +21,7 @@
 - [ ] fix dice score = inf problem
 - [ ] make the epoch more smaller / make the every_epoch_avl = fraction
 - [ ] write test part on the 1069 data
+- [ ] why there is a warning in mp4 part
 
 ### Reading
 - [ ] reading nnUnet again and using padding and interplot instead of interplotting
